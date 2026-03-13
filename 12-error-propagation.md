@@ -3,9 +3,11 @@
 
 ---
 
-## The Gap
+## The Gap (Resolved)
 
-The composition patterns in `03-composition-patterns.md` define what happens when everything succeeds. They are silent on failure. In a `PIPE` chain of five ARUs, if ARU #3 returns an error, do ARUs #4 and #5 execute? Who catches the error? Where is it handled?
+The original gap: `03-composition-patterns.md` defined what happens when everything succeeds, but was silent on failure. This document formally resolves that gap with the railway-oriented model below. The failure semantics for all 14 composition patterns are now fully specified — see the **Complete Pattern Failure Semantics Reference** table at the end of this document.
+
+The problem this solves: in a `PIPE` chain of five ARUs, if ARU #3 returns an error, do ARUs #4 and #5 execute? Who catches the error? Where is it handled?
 
 Without a formal answer, every AI generating a composition makes a different choice. The result is inconsistent error handling across the codebase — the exact kind of ambiguity ARIA exists to eliminate.
 
@@ -162,7 +164,7 @@ If A fails:        failure rail fires before any fork target is called
 If B fails:        failure rail fires; C may or may not have been called
                    (non-deterministic — FORK targets are independent)
 ```
-FORK targets that have been called are NOT automatically rolled back. If rollback is needed, use SAGA (see `patterns-async`).
+FORK targets that have been called are NOT automatically rolled back. If rollback is needed, use SAGA (see `03-composition-patterns.md §SAGA`).
 
 ### JOIN on failure
 ```

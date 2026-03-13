@@ -15,7 +15,7 @@ ARIA treats **context as a scarce resource** that must be explicitly managed. Th
 
 ## The Manifest Structure
 
-Every ARU has a manifest. The manifest is machine-readable and co-located with the ARU.
+Every ARU has a manifest. The manifest is machine-readable and co-located with the ARU. The **complete authoritative schema** with all fields, derivation tiers, and mandatoriness rules is in `20-manifest-schema.md`. This section shows a representative example for context loading purposes.
 
 ```yaml
 manifest:
@@ -211,7 +211,7 @@ behavioral_contract:
   must_be_called_after:  []     # list of ARU ids that must have been called first
   must_be_called_before: []     # list of ARU ids that must be called after
 
-  # Circuit breaker hint (see patterns-async)
+  # Circuit breaker hint (see 03-composition-patterns.md §CIRCUIT_BREAKER)
   circuit_breaker:
     failure_threshold_percent: 50
     evaluation_window: "10s"
