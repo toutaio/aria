@@ -154,6 +154,24 @@ aria-build generate ./src
 
 ---
 
+## AI Tool Skills
+
+This repository ships skill files for popular AI coding assistants so they produce ARIA-compliant code automatically — no manual context priming needed.
+
+| Tool | File | Auto-loaded? |
+|------|------|--------------|
+| Claude (Anthropic) | [`CLAUDE.md`](./CLAUDE.md) | ✅ Yes — Claude Code loads it automatically |
+| GitHub Copilot | [`.github/copilot-instructions.md`](./.github/copilot-instructions.md) | ✅ Yes — Copilot loads it repo-wide |
+| Cursor (legacy) | [`.cursorrules`](./.cursorrules) | ✅ Yes — loaded by older Cursor versions |
+| Cursor (current) | [`.cursor/rules/aria.mdc`](./.cursor/rules/aria.mdc) | ✅ Yes — loaded by Cursor v0.43+ |
+| Windsurf | [`.windsurfrules`](./.windsurfrules) | ✅ Yes — loaded automatically |
+| Cline (VS Code) | [`.clinerules`](./.clinerules) | ✅ Yes — loaded by the Cline extension |
+| Continue.dev | [`skills/continue-context.md`](./skills/continue-context.md) | 🔧 Manual — paste into `systemMessage` in `~/.continue/config.json` |
+
+**Canonical primer**: [`skills/aria-primer.md`](./skills/aria-primer.md) — the single source of truth. All tool files embed content derived from it. Update the primer first, then regenerate tool files when the framework evolves.
+
+---
+
 ## Manifest Sections
 
 A full manifest can declare up to 14 sections. Required sections depend on the layer:
