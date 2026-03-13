@@ -256,7 +256,10 @@ Step 7:  Execute parallelizable groups simultaneously
 Step 8:  After each group: validate graph integrity (type compatibility on new edges)
 Step 9:  On Reviewer rejection: return subtask to Generator with feedback
 Step 10: When all subtasks complete: run full graph validation
-Step 11: Promote completed ARUs from CANDIDATE → STABLE (pending human approval)
+Step 11: As each ARU reaches CANDIDATE state (streaming, not batch):
+           → Notify human with contract summary for that ARU
+           → Human approves individually (CANDIDATE → STABLE per doc 17 §Phase 3)
+           → Do NOT batch approvals at end — batching defeats the purpose of the human touchpoint
 ```
 
 ### Agent Interaction Map

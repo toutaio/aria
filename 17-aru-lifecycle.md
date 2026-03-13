@@ -43,6 +43,8 @@ The lifecycle begins not with code, but with a **subtask spec** produced by the 
 
 This prevents the most common form of architectural decay: ARUs created ad-hoc to solve immediate problems, with no declared layer, no typed contract, and no integration into the graph.
 
+> **Bootstrap Exception:** The invariant has one formal exception — the initial L0 type registry (see §Bootstrapping Protocol below). The first ARUs in a new domain are created through a direct human-driven bootstrapping protocol that precedes the Orchestrator's decomposition grammar. Once the L0 type registry exists, the invariant holds without exception.
+
 **What exists at this phase:**
 - A `subtask` object of type `ARU_CREATION`
 - Declared: id (semantic address), layer, input type, output type, composition pattern

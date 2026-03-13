@@ -63,7 +63,7 @@ The central thesis:
 |---|---|
 | `01-abstraction-layers.md` | The L0–L5 hierarchical model |
 | `02-atomic-responsibility-units.md` | ARU specification and structure |
-| `03-composition-patterns.md` | The 10 connection patterns |
+| `03-composition-patterns.md` | The 14 composition patterns (10 core + 4 async/distributed) |
 | `04-context-manifests.md` | Manifest structure and context budgets |
 | `05-semantic-graph.md` | Codebase-as-DAG and context loading |
 | `06-naming-conventions.md` | Semantic addressing system |
@@ -72,6 +72,15 @@ The central thesis:
 | `09-type-states.md` | Type state machines — encoding data lifecycle in the type |
 | `10-algebraic-types.md` | Sum types, product types, the universal contract grammar |
 | `11-type-compatibility.md` | Rules for connecting ARUs; type checking the graph |
-| `12-error-propagation.md` | Railway-oriented error model; success/failure rails |
+| `12-error-propagation.md` | Railway-oriented error model; success/failure rails for all 14 patterns |
 | `13-contract-versioning.md` | Contract lifecycle, migration ARUs, session-level caching |
 | `14-human-ai-collaboration.md` | Layer ownership map, ARIA compliance levels, adoption path |
+| `15-task-decomposition.md` | Subtask grammar, decomposition DAG, parallelization, underspecified detection |
+| `16-ai-agent-roles.md` | Navigator, Generator, Reviewer, Refactorer, Orchestrator — roles and protocols |
+| `17-aru-lifecycle.md` | Six lifecycle phases, bootstrapping protocol, ARU density reference |
+| `18-observability.md` | Trace propagation, health contracts, diagnostic surface |
+| `19-multi-agent-infrastructure.md` | Task queue, shared registry, agent isolation, conflict resolution |
+| `20-manifest-schema.md` | Unified authoritative manifest schema (all fields from docs 04, 09, 18) |
+| `21-runtime-composition.md` | Runtime substrate for railway execution and TraceContext injection |
+| `22-domain-decomposition.md` | Domain identification principles and boundary rules |
+| `23-test-infrastructure.md` | Scenario→test mapping, test generation protocol, coverage verification |

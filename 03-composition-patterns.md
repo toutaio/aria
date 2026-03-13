@@ -51,7 +51,7 @@ Fan-in. Multiple ARU outputs are combined into one input.
 [B: X2 → Y2] ──┘
 ```
 - C's input type must match the merged output shape
-- The merge type is declared (tuple, struct, union — never implicit)
+- The merge type is declared (**tuple or struct — never union, never implicit**). A union merge would make C's logic dependent on which branch fired — that is a ROUTE, not a JOIN.
 - Used for aggregation, combining results
 
 ---
@@ -122,13 +122,15 @@ Shape change within the same semantic domain. Input and output represent the sam
 
 ---
 
-### 9. VALIDATE `A → A | Error`
-Contract enforcement. A passes through unchanged if valid, or produces a typed error.
+### 9. VALIDATE `A → A' | Error`
+Contract enforcement. A validates its input and either produces a refined output type or a typed error.
 
 ```
-[A: X → X | ValidationError]
+[A: X → X' | ValidationError]
 ```
-- Output is always `input_type | ErrorType` — never throws
+- On success, output is **either identical to input or a narrowed subtype** — `ValidatedEmail` from `NonEmptyString` is valid narrowing
+- Output is always `success_type | ErrorType` — never throws
+- `X'` must be a subtype of `X` on success paths (narrowing is intentional and expected)
 - Validators are L1 Atoms (the simplest possible ARUs)
 - Can be composed in chains: `VALIDATE(format) → VALIDATE(range) → VALIDATE(business_rule)`
 

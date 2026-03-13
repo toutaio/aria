@@ -74,6 +74,7 @@ process     — handles a domain event or command
 enforce     — applies invariants and constraints
 emit        — produces domain events
 authorize   — makes access control decision
+persist     — writes a domain object to a durable store
 ```
 
 ### L4 Verbs (orchestration)

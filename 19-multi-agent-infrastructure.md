@@ -63,7 +63,13 @@ assignment_rules:
     assignable_to: HUMAN
 
   - subtask_type: [GRAPH_EDGE_ADD]
-    layer: [L1, L2, L3, L4]
+    layer: [L4]
+    assignable_to: GENERATOR
+    requires_human_approval: true   # L4 system topology is collaborative per doc 14
+    approval_event: "CANDIDATE_GRAPH_EDGE_L4"
+
+  - subtask_type: [GRAPH_EDGE_ADD]
+    layer: [L1, L2, L3]
     assignable_to: GENERATOR
 ```
 

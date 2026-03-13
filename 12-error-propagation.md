@@ -183,9 +183,288 @@ If the GATE predicate ARU fails:   failure rail fires
 If A fails upstream of GATE:       failure rail fires before GATE is evaluated
 ```
 
+### ROUTE on failure
+```
+If the routing predicate ARU fails:
+  → failure rail fires immediately
+  → neither B nor C is called
+  → RailError includes origin_aru: predicate ARU id (not the upstream ARU)
+
+If A fails before reaching the predicate:
+  → failure rail fires before predicate evaluation
+
+Note: ROUTE predicate failure is distinct from the predicate returning false.
+  returning false = valid routing decision (go to branch C)
+  returning Error  = predicate ARU itself is broken (failure rail, both branches skipped)
+```
+
+Predicate ARUs used in ROUTE and GATE must declare `error_variants: []` in their manifest
+if they are designed to be total (never fail). Any non-empty `error_variants` declaration
+signals the caller composition that a failure rail case must be handled.
+
+### VALIDATE on failure
+```
+VALIDATE output: success_type | ValidationError
+
+The two tracks are explicit in the return type — not hidden.
+On success: output is the narrowed type (subtype of input), continues on success rail
+On failure: ValidationError goes to failure rail
+
+VALIDATE does NOT short-circuit the whole pipeline on failure by default.
+The composition may declare a policy:
+  fail_policy: CONTINUE   # drop the item, continue (used in batch processing)
+  fail_policy: SHORT_CIRCUIT  # default — treat as pipeline failure
+```
+
+### TRANSFORM on failure
+```
+TRANSFORM is declared deterministic with no side effects.
+In practice, TRANSFORM can fail (malformed input, codec error).
+
+If TRANSFORM fails:
+  → failure rail fires
+  → RailError.origin_aru identifies the transform
+  → The failure type is TransformError (declared in manifest error_variants)
+
+A TRANSFORM with no declared error_variants is guaranteed total — build-time enforcement.
+```
+
+### OBSERVE on failure
+```
+OBSERVE emits an event to an EventBus as a side channel.
+The main data flow must NEVER be affected by observation failure.
+
+Rule: OBSERVE failure is isolated — it CANNOT propagate to the failure rail.
+If the event emission fails:
+  → Log the failure internally (dead-letter queue or silently discard per backpressure policy)
+  → Main data flow continues on SUCCESS rail as if OBSERVE succeeded
+
+This is the only pattern where failure is intentionally swallowed.
+OBSERVE is declared as non-critical by definition — if observation failing is critical,
+use a PIPE to an explicit event-processing ARU instead.
+```
+
+### CACHE on failure
+```
+Cache HIT:  returns stored value → no failure possible (value was validated when stored)
+Cache MISS: executes the underlying ARU
+
+If the underlying ARU fails on CACHE MISS:
+  → failure rail fires (same as direct ARU failure)
+  → value is NOT stored in the cache
+
+If the cache storage itself fails (write-back error):
+  → The underlying ARU's SUCCESS result is returned (cache write is best-effort)
+  → A OBSERVE-pattern event is emitted: CacheWriteError
+  → Main flow continues on SUCCESS rail
+
+Cache read failure (storage unavailable):
+  → Treat as cache MISS → execute underlying ARU
+  → OBSERVE event: CacheReadError
+  → Must be declared in CACHE ARU manifest: `read_failure_policy: FALLTHROUGH | FAIL`
+```
+
 ---
 
-## Nested Pipelines and Error Propagation
+## The Three-Track Type (PARALLEL_JOIN Extension)
+
+The binary two-track model (SUCCESS | FAILURE) is insufficient for `PARALLEL_JOIN` with
+`minimum_required_results` semantics. A third track is introduced:
+
+```
+ThreeTrack<T, P, E> =
+  | { track: 'SUCCESS',        value: T }
+  | { track: 'PARTIAL_SUCCESS', value: P, failures: RailError<E>[] }
+  | { track: 'FAILURE',        error: E }
+```
+
+### PARALLEL_JOIN on failure
+```
+Inputs: branches [B1, B2, B3, ..., Bn]
+Configuration:
+  minimum_required_results: k   (k <= n)
+  timeout: duration
+
+Case 1 — All branches succeed:
+  → SUCCESS track with complete merged product type
+
+Case 2 — k or more branches succeed (within timeout):
+  → PARTIAL_SUCCESS track
+  → value: product type with results from succeeding branches
+           (missing branches represented as declared absent fields)
+  → failures: list of RailError from failed branches
+
+Case 3 — Fewer than k branches succeed (or timeout exceeded):
+  → FAILURE track
+  → error: ParallelJoinError { succeeded: n, required: k, failures: RailError[] }
+
+The composition consuming PARALLEL_JOIN MUST handle all three tracks.
+A handler that only handles SUCCESS and FAILURE is a build failure.
+```
+
+**Manifest declaration for PARALLEL_JOIN:**
+```yaml
+composition:
+  pattern: PARALLEL_JOIN
+  branches: [...]
+  minimum_required_results: 2
+  timeout_ms: 5000
+  partial_success_handler: domain.parallel.handlePartial   ← required when min < total branches
+  error_handler: domain.parallel.handleFailure
+```
+
+---
+
+## SAGA Compensation Protocol
+
+SAGA is the only pattern where the **failure rail triggers active compensating work** rather than
+passive error delivery.
+
+### The Compensation Sub-Protocol
+
+```
+Forward execution:
+  [A] ──▶ [B] ──▶ [C]
+
+On failure at step X (e.g., C fails):
+  1. C's failure goes to SAGA's internal failure rail (not the chain's error handler)
+  2. SAGA coordinator calls C⁻¹ (C's compensating ARU) — even though C failed,
+     C may have produced partial side effects that need reversal
+  3. If C⁻¹ succeeds: call B⁻¹ → A⁻¹ in strict reverse order
+  4. When all compensations complete: deliver CompensationResult to the SAGA error handler
+
+On failure at compensation (C⁻¹ fails):
+  5. Log CompensationFailure with full provenance
+  6. Continue reverse compensation (B⁻¹, A⁻¹) — do not abort compensation on compensation failure
+  7. Deliver PartialCompensationResult to error handler:
+     { compensated: [B, A], failed_compensation: [C], original_failure: RailError }
+```
+
+### Who Calls the Compensating ARUs
+
+The **SAGA composition ARU** is the coordinator. It is not a passive connection — it is an active
+ARU that:
+- Tracks the execution state of all forward steps
+- Knows which steps have executed (and thus need compensation)
+- Dispatches compensation in reverse order
+- Delivers the final outcome to the error handler
+
+```yaml
+# SAGA composition manifest
+composition:
+  pattern: SAGA
+  steps:
+    - aru: billing.charge.execute.payment
+      compensating_aru: billing.charge.compensate.reverse
+    - aru: inventory.stock.execute.reserve
+      compensating_aru: inventory.stock.compensate.release
+    - aru: fulfillment.order.execute.create
+      compensating_aru: fulfillment.order.compensate.cancel
+  error_handler: billing.saga.handleCompensationResult
+```
+
+### Compensation ARU Requirements
+```
+compensation_aru:
+  - Must be idempotent (may be called more than once in retry scenarios)
+  - Input type: the same type as the forward ARU's input (plus a compensation_context field)
+  - Output type: CompensationResult | CompensationFailure
+  - Must NEVER call downstream ARUs (compensation is always purely local to its own step)
+  - Declared side_effects: WRITE (compensation IS a side effect by definition)
+```
+
+### SAGA and the Binary Railway
+
+SAGA does not use the binary railway model internally — the three possible outcomes are:
+```
+SAGAResult<T> =
+  | { outcome: 'COMMITTED',    value: T }
+  | { outcome: 'COMPENSATED',  compensation_log: CompensationLog }
+  | { outcome: 'PARTIAL',      compensation_log: CompensationLog, uncompensated: ARU_id[] }
+```
+
+COMMITTED maps to the SUCCESS track. COMPENSATED and PARTIAL map to the FAILURE track at the
+outer composition level. The SAGA error handler receives a typed SAGAResult, not a raw RailError.
+
+---
+
+## Distributed Pattern Failure Semantics
+
+### STREAM on failure
+
+STREAM introduces two failure granularities — **element-level** and **stream-level**:
+
+```
+Element-level failure (one element fails to process):
+  element_failure_policy:
+    DROP:        Discard the element, continue the stream (lossy, explicit declaration required)
+    DEAD_LETTER: Route the element to a declared dead-letter ARU, continue the stream
+    FAIL_STREAM: Treat as stream-level failure (default)
+
+Stream-level failure (source or sink unavailable):
+  → Stream-level failure rail fires
+  → All in-flight elements are either:
+      a) completed (if processing is idempotent) or
+      b) dead-lettered (if not)
+  → RailError<StreamError> delivered to stream error handler
+```
+
+**Manifest declaration:**
+```yaml
+behavioral_contract:
+  backpressure: BUFFER(1000)
+  element_failure_policy: DEAD_LETTER
+  dead_letter_aru: "stream.deadletter.handle.element"
+  stream_error_handler: "stream.error.handle.streamFailure"
+```
+
+### CIRCUIT_BREAKER on failure
+
+CIRCUIT_BREAKER adds a **typed circuit state** as a first-class error variant:
+
+```
+CircuitBreakerError =
+  | { type: 'CIRCUIT_OPEN', state: CircuitState, retry_after: ISO8601Timestamp }
+  | { type: 'EXECUTION_FAILURE', underlying_error: RailError<E> }
+
+When circuit is OPEN:
+  → Calls fail IMMEDIATELY with CircuitBreakerError.CIRCUIT_OPEN
+  → Underlying ARU is NOT called
+  → retry_after is computed from the circuit's configuration
+
+When circuit is HALF_OPEN and probe fails:
+  → Circuit returns to OPEN
+  → CircuitBreakerError.CIRCUIT_OPEN delivered to failure rail
+
+When circuit is HALF_OPEN and probe succeeds:
+  → Circuit transitions to CLOSED
+  → That call's result delivered to SUCCESS rail
+```
+
+Callers of a CIRCUIT_BREAKER-wrapped ARU must handle `CircuitBreakerError.CIRCUIT_OPEN` as a
+distinct error variant. Treating it as a generic failure is a build warning (it loses the
+`retry_after` information that enables intelligent backoff).
+
+---
+
+## Complete Pattern Failure Semantics Reference
+
+| Pattern | Success Rail | Failure Rail | Special Cases |
+|---|---|---|---|
+| PIPE | Passes to next ARU | Short-circuit to ErrorHandler | — |
+| FORK | All branches get value | Pre-fork failure only | Branch failures are independent |
+| JOIN | Merged product to C | Any branch failure before merge | A completes even if B fails |
+| GATE | Passes if predicate true | Predicate ARU failure | False predicate = drop (not failure) |
+| ROUTE | Dispatches to one branch | Predicate ARU failure | False/true = routing decisions (not failures) |
+| VALIDATE | Narrowed type | ValidationError | Configurable: SHORT_CIRCUIT or CONTINUE |
+| LOOP | Exits when condition met | Body failure exits loop | Use RECOVER inside for retry |
+| OBSERVE | Main flow unchanged | **Isolated — never propagates** | OBSERVE failures are swallowed |
+| TRANSFORM | Converted type | TransformError | Total transforms declare no error_variants |
+| CACHE | Hit returns stored; miss executes | Miss: underlying failure | Read/write failures have separate policies |
+| STREAM | Elements processed | Element or stream-level failure | Two granularities: element vs. stream |
+| SAGA | COMMITTED | COMPENSATED or PARTIAL | Compensation runs on failure rail |
+| CIRCUIT_BREAKER | Result delivered | CIRCUIT_OPEN or EXECUTION_FAILURE | OPEN = fast-fail, not underlying error |
+| PARALLEL_JOIN | Complete product | Fewer than minimum succeed | PARTIAL_SUCCESS track for partial results | and Error Propagation
 
 When a composition is nested inside another (a PIPE chain inside an ORGANISM inside a SYSTEM), failure rails compose:
 
