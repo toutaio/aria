@@ -1,0 +1,9 @@
+{
+  "name": "aria-build-bin-darwin-arm64",
+  "version": "0.1.0",
+  "description": "aria-build and aria-lsp binaries for darwin-arm64",
+  "os": ["darwin"],
+  "cpu": ["arm64"],
+  "license": "MIT",
+  "files": ["bin"]
+}

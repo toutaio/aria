@@ -1,0 +1,35 @@
+{
+  "name": "@aria/runtime",
+  "version": "0.1.0",
+  "description": "ARIA runtime types: Result<T,E>, RailError<E>, ThreeTrack<T,P,E>, TraceContext. Zero external dependencies.",
+  "keywords": [
+    "aria",
+    "railway",
+    "result",
+    "error-handling"
+  ],
+  "license": "MIT",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/cjs/index.js",
+      "import": "./dist/esm/index.js",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json && tsc -p tsconfig.types.json",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/ tests/"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^1.6.1"
+  }
+}

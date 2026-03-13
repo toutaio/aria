@@ -1,0 +1,11 @@
+identity:
+  address: order.fulfillment.process.order
+  layer: 2
+
+composition:
+  pattern: PARALLEL_JOIN
+  input_type: OrderItem
+  output_type: FulfillmentResult
+  error_types:
+    - FulfillmentError.STOCK_EMPTY
+  minimum_required_results: 1

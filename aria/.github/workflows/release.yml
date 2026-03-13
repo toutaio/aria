@@ -1,0 +1,132 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            binary: aria-build
+            platform_pkg: aria-build-bin-linux-x64
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            binary: aria-build
+            platform_pkg: aria-build-bin-linux-arm64
+            cross: true
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            binary: aria-build
+            platform_pkg: aria-build-bin-darwin-x64
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            binary: aria-build
+            platform_pkg: aria-build-bin-darwin-arm64
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            binary: aria-build.exe
+            platform_pkg: aria-build-bin-win32-x64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install cross (for ARM Linux)
+        if: matrix.cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build (native)
+        if: '!matrix.cross'
+        run: cargo build --release --target ${{ matrix.target }} --package aria-build
+
+      - name: Build (cross)
+        if: matrix.cross
+        run: cross build --release --target ${{ matrix.target }} --package aria-build
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform_pkg }}
+          path: target/${{ matrix.target }}/release/${{ matrix.binary }}
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/**/*
+          generate_release_notes: true
+
+  publish-npm:
+    name: Publish npm packages
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+
+      - name: Copy binaries into platform packages
+        run: |
+          cp dist/aria-build-bin-linux-x64/aria-build packages/aria-build-bin-linux-x64/bin/aria-build
+          cp dist/aria-build-bin-linux-arm64/aria-build packages/aria-build-bin-linux-arm64/bin/aria-build
+          cp dist/aria-build-bin-darwin-x64/aria-build packages/aria-build-bin-darwin-x64/bin/aria-build
+          cp dist/aria-build-bin-darwin-arm64/aria-build packages/aria-build-bin-darwin-arm64/bin/aria-build
+          cp dist/aria-build-bin-win32-x64/aria-build.exe packages/aria-build-bin-win32-x64/bin/aria-build.exe
+          chmod +x packages/aria-build-bin-*/bin/aria-build 2>/dev/null || true
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Publish platform packages
+        run: |
+          for pkg in packages/aria-build-bin-*; do
+            cd $pkg && npm publish --access public && cd ../..
+          done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @aria/build-bin
+        run: cd packages/aria-build-bin && npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

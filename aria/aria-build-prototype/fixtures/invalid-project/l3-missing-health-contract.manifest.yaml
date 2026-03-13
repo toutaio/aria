@@ -1,0 +1,64 @@
+# Missing health_contract for L3 ARU — should fail
+manifest:
+  id: "auth.session.execute.loginFlow"
+  version: "1.0.0"
+  schema_version: "1.0"
+
+  identity:
+    purpose: "Executes the complete authentication login workflow"
+    domain: "auth"
+    subdomain: "session"
+    verb: "execute"
+    entity: "loginFlow"
+
+  layer:
+    declared: L3
+    inferred: L3
+
+  contract:
+    input:
+      type: "LoginRequest"
+    output:
+      success: "AuthSession"
+      failure: "AuthError.UNAUTHORIZED"
+    side_effects: WRITE
+    idempotent: false
+    deterministic: false
+
+  dependencies:
+    - id: "auth.token.validate.signature"
+      layer: L1
+      stability: STABLE
+
+  context_budget:
+    to_use: 400
+    to_modify: 1200
+    to_extend: 2000
+    to_replace: 3000
+
+  test_contract:
+    scenarios:
+      - scenario: "Valid credentials produce a new auth session"
+    coverage_required: true
+
+  behavioral_contract:
+    max_latency_p99: "500ms"
+    timeout: "3000ms"
+
+  # health_contract is intentionally MISSING — this should fail for L3
+
+  diagnostic_surface:
+    failure_indicators:
+      - symptom: "Elevated 4xx rate"
+        check: "Check credentials"
+
+  stability: STABLE
+
+  lifecycle:
+    phase: STABLE
+    stable_since: "2024-01-01T00:00:00Z"
+
+  manifest_provenance:
+    derived_by: "AI_PROPOSED"
+    reviewed_by: "HUMAN"
+    approved_at: "2024-01-01T00:00:00Z"

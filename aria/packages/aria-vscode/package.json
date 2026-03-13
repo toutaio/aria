@@ -1,0 +1,47 @@
+{
+  "name": "aria-vscode",
+  "displayName": "ARIA Manifest Validator",
+  "description": "Real-time validation of ARIA .manifest.yaml files via aria-lsp",
+  "version": "0.1.0",
+  "publisher": "aria",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": ["Linters", "Other"],
+  "keywords": ["aria", "manifest", "yaml", "lsp"],
+  "license": "MIT",
+  "activationEvents": [
+    "onLanguage:yaml",
+    "workspaceContains:**/*.manifest.yaml"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "ARIA Manifest Validator",
+      "properties": {
+        "aria.lspServerPath": {
+          "type": "string",
+          "default": "",
+          "description": "Override path to aria-lsp binary. If empty, uses @aria/build-bin resolved binary."
+        },
+        "aria.complianceLevel": {
+          "type": "number",
+          "default": 5,
+          "minimum": 0,
+          "maximum": 5,
+          "description": "Compliance level for manifest validation (0-5)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "@types/vscode": "^1.80.0",
+    "vscode-languageclient": "^9.0.0"
+  }
+}

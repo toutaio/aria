@@ -1,0 +1,468 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://aria-framework.io/schemas/aria-manifest.schema.json",
+  "title": "ARIA ARU Manifest",
+  "description": "Authoritative schema for ARIA Atomic Responsibility Unit manifests (doc 20). schema_version: 1.0",
+  "type": "object",
+  "required": ["manifest"],
+  "additionalProperties": false,
+
+  "definitions": {
+    "layerEnum": {
+      "type": "string",
+      "enum": ["L0", "L1", "L2", "L3", "L4", "L5"]
+    },
+    "stabilityEnum": {
+      "type": "string",
+      "enum": ["EXPERIMENTAL", "STABLE", "FROZEN"]
+    },
+    "lifecyclePhaseEnum": {
+      "type": "string",
+      "enum": ["SPECIFIED", "DRAFT", "CANDIDATE", "STABLE", "DEPRECATED", "TOMBSTONED"]
+    },
+    "sideEffectsEnum": {
+      "type": "string",
+      "enum": ["NONE", "READ", "WRITE", "EXTERNAL"]
+    },
+    "compositionPatternEnum": {
+      "type": "string",
+      "enum": [
+        "PIPE", "FORK", "JOIN", "GATE", "ROUTE", "LOOP",
+        "OBSERVE", "TRANSFORM", "VALIDATE", "CACHE",
+        "STREAM", "SAGA", "CIRCUIT_BREAKER", "PARALLEL_JOIN"
+      ]
+    },
+    "derivationSourceEnum": {
+      "type": "string",
+      "enum": ["STATIC_ANALYSIS", "AI_PROPOSED", "HUMAN_DECLARED"]
+    },
+    "reviewedByEnum": {
+      "type": "string",
+      "enum": ["REVIEWER_AGENT", "HUMAN"]
+    },
+    "retryStrategyEnum": {
+      "type": "string",
+      "enum": ["exponential_backoff", "linear", "none"]
+    },
+    "backpressureEnum": {
+      "type": "string",
+      "pattern": "^(DROP|ERROR|BUFFER\\(\\d+\\))$"
+    },
+    "elementFailurePolicyEnum": {
+      "type": "string",
+      "enum": ["DROP", "DEAD_LETTER", "FAIL_STREAM"]
+    },
+    "readFailurePolicyEnum": {
+      "type": "string",
+      "enum": ["FALLTHROUGH", "FAIL"]
+    },
+    "semanticAddress": {
+      "type": "string",
+      "description": "Semantic address in the form [domain].[subdomain].[verb].[entity] for L1+, or [domain].[entity] for L0",
+      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*\\.[a-zA-Z][a-zA-Z0-9_]*(\\.[a-zA-Z][a-zA-Z0-9_]*\\.[a-zA-Z][a-zA-Z0-9_]*)?$"
+    },
+    "semverString": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "iso8601Timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "errorTypePattern": {
+      "type": "string",
+      "description": "Error type must follow {Domain}Error.{Code} pattern",
+      "pattern": "^[A-Z][a-zA-Z]*Error\\.[A-Z_]+$"
+    },
+
+    "identitySection": {
+      "type": "object",
+      "required": ["purpose", "domain", "subdomain", "verb", "entity"],
+      "additionalProperties": false,
+      "properties": {
+        "purpose": { "type": "string", "minLength": 1 },
+        "domain": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "subdomain": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "verb": { "type": "string", "pattern": "^[a-z][a-zA-Z0-9]*$" },
+        "entity": { "type": "string", "pattern": "^[a-zA-Z][a-zA-Z0-9]*$" }
+      }
+    },
+
+    "layerSection": {
+      "type": "object",
+      "required": ["declared", "inferred"],
+      "additionalProperties": false,
+      "properties": {
+        "declared": { "$ref": "#/definitions/layerEnum" },
+        "inferred": { "$ref": "#/definitions/layerEnum" }
+      }
+    },
+
+    "contractSection": {
+      "type": "object",
+      "required": ["input", "output", "side_effects", "idempotent", "deterministic"],
+      "additionalProperties": false,
+      "properties": {
+        "input": {
+          "type": "object",
+          "required": ["type"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "type": "string", "minLength": 1 },
+            "constraints": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "output": {
+          "type": "object",
+          "required": ["success", "failure"],
+          "additionalProperties": false,
+          "properties": {
+            "success": { "type": "string", "minLength": 1 },
+            "failure": { "type": "string", "minLength": 1 }
+          }
+        },
+        "side_effects": { "$ref": "#/definitions/sideEffectsEnum" },
+        "idempotent": { "type": "boolean" },
+        "deterministic": { "type": "boolean" }
+      }
+    },
+
+    "typeStateSection": {
+      "type": "object",
+      "required": ["input_state", "output_state", "machine_ref"],
+      "additionalProperties": false,
+      "properties": {
+        "input_state": { "type": "string", "minLength": 1 },
+        "output_state": { "type": "string", "minLength": 1 },
+        "machine_ref": { "$ref": "#/definitions/semanticAddress" }
+      }
+    },
+
+    "dependencyItem": {
+      "type": "object",
+      "required": ["id", "layer", "stability"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/definitions/semanticAddress" },
+        "layer": { "$ref": "#/definitions/layerEnum" },
+        "version_pin": { "$ref": "#/definitions/semverString" },
+        "stability": { "$ref": "#/definitions/stabilityEnum" }
+      }
+    },
+
+    "sagaStep": {
+      "type": "object",
+      "required": ["aru", "compensating_aru"],
+      "additionalProperties": false,
+      "properties": {
+        "aru": { "$ref": "#/definitions/semanticAddress" },
+        "compensating_aru": { "$ref": "#/definitions/semanticAddress" }
+      }
+    },
+
+    "compositionSection": {
+      "type": "object",
+      "required": ["pattern"],
+      "additionalProperties": true,
+      "properties": {
+        "pattern": { "$ref": "#/definitions/compositionPatternEnum" },
+        "chain": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/semanticAddress" }
+        },
+        "branches": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/semanticAddress" }
+        },
+        "error_handler": { "$ref": "#/definitions/semanticAddress" },
+        "merge_type": { "type": "string", "minLength": 1 },
+        "predicate_aru": { "$ref": "#/definitions/semanticAddress" },
+        "condition_aru": { "$ref": "#/definitions/semanticAddress" },
+        "max_iterations": { "type": "integer", "minimum": 1 },
+        "key_aru": { "$ref": "#/definitions/semanticAddress" },
+        "ttl_seconds": { "type": "integer", "minimum": 0 },
+        "invalidation": { "$ref": "#/definitions/semanticAddress" },
+        "read_failure_policy": { "$ref": "#/definitions/readFailurePolicyEnum" },
+        "source_aru": { "$ref": "#/definitions/semanticAddress" },
+        "processor_aru": { "$ref": "#/definitions/semanticAddress" },
+        "backpressure": { "$ref": "#/definitions/backpressureEnum" },
+        "element_failure_policy": { "$ref": "#/definitions/elementFailurePolicyEnum" },
+        "dead_letter_aru": { "$ref": "#/definitions/semanticAddress" },
+        "steps": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/sagaStep" }
+        },
+        "target_aru": { "$ref": "#/definitions/semanticAddress" },
+        "failure_threshold": { "type": "integer", "minimum": 1 },
+        "evaluation_window_ms": { "type": "integer", "minimum": 1 },
+        "half_open_probe_interval_ms": { "type": "integer", "minimum": 1 },
+        "minimum_required_results": { "type": "integer", "minimum": 1 },
+        "timeout_ms": { "type": "integer", "minimum": 1 },
+        "partial_success_handler": { "$ref": "#/definitions/semanticAddress" },
+        "true_branch": { "$ref": "#/definitions/semanticAddress" },
+        "false_branch": { "$ref": "#/definitions/semanticAddress" }
+      }
+    },
+
+    "sagaParticipantSection": {
+      "type": "object",
+      "required": ["compensating_aru", "idempotency_key_field"],
+      "additionalProperties": false,
+      "properties": {
+        "compensating_aru": { "$ref": "#/definitions/semanticAddress" },
+        "idempotency_key_field": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "contextBudgetSection": {
+      "type": "object",
+      "required": ["to_use", "to_modify", "to_extend", "to_replace"],
+      "additionalProperties": false,
+      "properties": {
+        "to_use": { "type": "integer", "minimum": 0 },
+        "to_modify": { "type": "integer", "minimum": 0 },
+        "to_extend": { "type": "integer", "minimum": 0 },
+        "to_replace": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "testContractSection": {
+      "type": "object",
+      "required": ["scenarios"],
+      "additionalProperties": false,
+      "properties": {
+        "scenarios": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["scenario"],
+            "properties": {
+              "scenario": { "type": "string", "minLength": 1 }
+            }
+          },
+          "minItems": 1
+        },
+        "coverage_required": { "type": "boolean" },
+        "mutation_testing": { "type": "boolean" }
+      }
+    },
+
+    "behavioralContractSection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_latency_p99": { "type": "string", "pattern": "^\\d+ms$" },
+        "max_latency_p999": { "type": "string", "pattern": "^\\d+ms$" },
+        "max_calls_per_second": { "type": "integer", "minimum": 0 },
+        "max_calls_per_user_per_second": { "type": "integer", "minimum": 0 },
+        "idempotent_within": { "type": "string" },
+        "timeout": { "type": "string", "pattern": "^\\d+ms$" },
+        "must_be_called_after": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/semanticAddress" }
+        },
+        "must_be_called_before": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/semanticAddress" }
+        },
+        "max_retries": { "type": "integer", "minimum": 0 },
+        "retry_strategy": { "$ref": "#/definitions/retryStrategyEnum" }
+      }
+    },
+
+    "lifecycleSection": {
+      "type": "object",
+      "required": ["phase"],
+      "additionalProperties": false,
+      "properties": {
+        "phase": { "$ref": "#/definitions/lifecyclePhaseEnum" },
+        "candidate_since": { "$ref": "#/definitions/iso8601Timestamp" },
+        "stable_since": { "$ref": "#/definitions/iso8601Timestamp" },
+        "deprecated_since": { "$ref": "#/definitions/iso8601Timestamp" },
+        "sunset_at": { "$ref": "#/definitions/iso8601Timestamp" },
+        "migration_aru": { "$ref": "#/definitions/semanticAddress" },
+        "tombstoned_at": { "$ref": "#/definitions/iso8601Timestamp" }
+      },
+      "if": {
+        "properties": { "phase": { "const": "DEPRECATED" } }
+      },
+      "then": {
+        "required": ["deprecated_since", "sunset_at", "migration_aru"]
+      }
+    },
+
+    "healthContractSection": {
+      "type": "object",
+      "required": ["sla_latency_p99", "sla_availability"],
+      "additionalProperties": false,
+      "properties": {
+        "sla_latency_p99": { "type": "string", "pattern": "^\\d+ms$" },
+        "sla_availability": { "type": "string", "pattern": "^\\d+\\.\\d+%$" },
+        "health_check_aru": { "$ref": "#/definitions/semanticAddress" },
+        "degraded_threshold": {
+          "type": "object",
+          "required": ["error_rate_percent", "latency_p99_multiplier"],
+          "additionalProperties": false,
+          "properties": {
+            "error_rate_percent": { "type": "number", "minimum": 0, "maximum": 100 },
+            "latency_p99_multiplier": { "type": "number", "minimum": 1 }
+          }
+        },
+        "circuit_open_threshold": {
+          "type": "object",
+          "required": ["error_rate_percent", "consecutive_failures"],
+          "additionalProperties": false,
+          "properties": {
+            "error_rate_percent": { "type": "number", "minimum": 0, "maximum": 100 },
+            "consecutive_failures": { "type": "integer", "minimum": 1 }
+          }
+        }
+      }
+    },
+
+    "diagnosticSurfaceSection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "failure_indicators": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["symptom", "check"],
+            "additionalProperties": false,
+            "properties": {
+              "symptom": { "type": "string", "minLength": 1 },
+              "check": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "known_failure_patterns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["pattern", "description", "resolution_steps", "minimum_context_level"],
+            "additionalProperties": false,
+            "properties": {
+              "pattern": { "type": "string", "minLength": 1 },
+              "description": { "type": "string", "minLength": 1 },
+              "resolution_steps": {
+                "type": "array",
+                "items": { "type": "string" },
+                "minItems": 1
+              },
+              "minimum_context_level": { "type": "integer", "minimum": 1, "maximum": 4 }
+            }
+          }
+        },
+        "escalation_path": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["layer", "handler"],
+            "additionalProperties": false,
+            "properties": {
+              "layer": { "$ref": "#/definitions/layerEnum" },
+              "handler": { "$ref": "#/definitions/semanticAddress" }
+            }
+          }
+        }
+      }
+    },
+
+    "manifestProvenanceSection": {
+      "type": "object",
+      "required": ["derived_by", "reviewed_by", "approved_at"],
+      "additionalProperties": false,
+      "properties": {
+        "derived_by": { "$ref": "#/definitions/derivationSourceEnum" },
+        "reviewed_by": { "$ref": "#/definitions/reviewedByEnum" },
+        "approved_at": { "$ref": "#/definitions/iso8601Timestamp" },
+        "bundle_version": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+      }
+    },
+
+    "manifestBody": {
+      "type": "object",
+      "description": "The manifest body. Required fields scale with layer (see Field Mandatoriness by Layer table in 20-manifest-schema.md)",
+      "required": [
+        "id",
+        "version",
+        "schema_version",
+        "identity",
+        "layer",
+        "contract",
+        "stability",
+        "lifecycle",
+        "manifest_provenance"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/definitions/semanticAddress" },
+        "version": { "$ref": "#/definitions/semverString" },
+        "schema_version": {
+          "type": "string",
+          "const": "1.0",
+          "description": "Which version of the ARIA manifest schema this manifest targets. Minor bumps (1.x) are backwards-compatible. Major bumps require aria-build migrate."
+        },
+        "identity": { "$ref": "#/definitions/identitySection" },
+        "layer": { "$ref": "#/definitions/layerSection" },
+        "contract": { "$ref": "#/definitions/contractSection" },
+        "type_state": { "$ref": "#/definitions/typeStateSection" },
+        "dependencies": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/dependencyItem" }
+        },
+        "composition": { "$ref": "#/definitions/compositionSection" },
+        "saga_participant": { "$ref": "#/definitions/sagaParticipantSection" },
+        "context_budget": { "$ref": "#/definitions/contextBudgetSection" },
+        "test_contract": { "$ref": "#/definitions/testContractSection" },
+        "behavioral_contract": { "$ref": "#/definitions/behavioralContractSection" },
+        "stability": { "$ref": "#/definitions/stabilityEnum" },
+        "lifecycle": { "$ref": "#/definitions/lifecycleSection" },
+        "health_contract": { "$ref": "#/definitions/healthContractSection" },
+        "diagnostic_surface": { "$ref": "#/definitions/diagnosticSurfaceSection" },
+        "manifest_provenance": { "$ref": "#/definitions/manifestProvenanceSection" }
+      },
+
+      "allOf": [
+        {
+          "description": "L1+ requires dependencies, context_budget, test_contract",
+          "if": {
+            "type": "object",
+            "properties": {
+              "layer": {
+                "type": "object",
+                "properties": { "declared": { "type": "string", "enum": ["L1", "L2", "L3", "L4", "L5"] } }
+              }
+            }
+          },
+          "then": {
+            "required": ["dependencies", "context_budget", "test_contract"]
+          }
+        },
+        {
+          "description": "L3+ requires behavioral_contract, health_contract, diagnostic_surface",
+          "if": {
+            "type": "object",
+            "properties": {
+              "layer": {
+                "type": "object",
+                "properties": { "declared": { "type": "string", "enum": ["L3", "L4", "L5"] } }
+              }
+            }
+          },
+          "then": {
+            "required": ["behavioral_contract", "health_contract", "diagnostic_surface"]
+          }
+        }
+      ]
+    }
+  },
+
+  "properties": {
+    "manifest": { "$ref": "#/definitions/manifestBody" }
+  }
+}

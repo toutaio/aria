@@ -1,0 +1,26 @@
+{
+  "name": "@aria/build-bin",
+  "version": "0.1.0",
+  "description": "Platform shim for aria-build and aria-lsp binaries — resolves to the correct platform-specific package",
+  "keywords": ["aria", "build", "cli", "binary"],
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "bin": {
+    "aria-build": "./src/run-aria-build.js",
+    "aria-lsp": "./src/run-aria-lsp.js"
+  },
+  "scripts": {
+    "postinstall": "node src/postinstall.js"
+  },
+  "optionalDependencies": {
+    "aria-build-bin-linux-x64": "0.1.0",
+    "aria-build-bin-linux-arm64": "0.1.0",
+    "aria-build-bin-darwin-x64": "0.1.0",
+    "aria-build-bin-darwin-arm64": "0.1.0",
+    "aria-build-bin-win32-x64": "0.1.0"
+  }
+}

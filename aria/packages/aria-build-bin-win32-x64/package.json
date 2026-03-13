@@ -1,0 +1,9 @@
+{
+  "name": "aria-build-bin-win32-x64",
+  "version": "0.1.0",
+  "description": "aria-build and aria-lsp binaries for win32-x64",
+  "os": ["win32"],
+  "cpu": ["x64"],
+  "license": "MIT",
+  "files": ["bin"]
+}

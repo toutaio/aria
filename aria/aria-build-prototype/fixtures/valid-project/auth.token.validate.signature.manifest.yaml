@@ -1,0 +1,56 @@
+manifest:
+  id: "auth.token.validate.signature"
+  version: "1.0.0"
+  schema_version: "1.0"
+
+  identity:
+    purpose: "Validates the cryptographic signature of an authentication token"
+    domain: "auth"
+    subdomain: "token"
+    verb: "validate"
+    entity: "signature"
+
+  layer:
+    declared: L1
+    inferred: L1
+
+  contract:
+    input:
+      type: "AuthToken"
+      constraints:
+        - "Token must be a non-empty string"
+    output:
+      success: "ValidatedToken"
+      failure: "AuthError.INVALID_SIGNATURE"
+    side_effects: NONE
+    idempotent: true
+    deterministic: true
+
+  dependencies:
+    - id: "auth.token"
+      layer: L0
+      stability: STABLE
+
+  context_budget:
+    to_use: 150
+    to_modify: 400
+    to_extend: 600
+    to_replace: 800
+
+  test_contract:
+    scenarios:
+      - scenario: "Valid token signature passes validation"
+      - scenario: "Expired token signature is rejected"
+      - scenario: "Tampered token signature is rejected"
+    coverage_required: true
+
+  stability: STABLE
+
+  lifecycle:
+    phase: STABLE
+    stable_since: "2024-01-01T00:00:00Z"
+
+  manifest_provenance:
+    derived_by: "AI_PROPOSED"
+    reviewed_by: "REVIEWER_AGENT"
+    approved_at: "2024-01-01T00:00:00Z"

@@ -1,0 +1,40 @@
+name: Publish @aria/runtime
+
+on:
+  push:
+    tags:
+      - 'runtime-v*.*.*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        working-directory: aria/packages/aria-runtime
+        run: npm install
+
+      - name: Typecheck
+        working-directory: aria/packages/aria-runtime
+        run: npx tsc --noEmit
+
+      - name: Test
+        working-directory: aria/packages/aria-runtime
+        run: npx vitest run
+
+      - name: Build
+        working-directory: aria/packages/aria-runtime
+        run: npm run build
+
+      - name: Publish
+        working-directory: aria/packages/aria-runtime
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

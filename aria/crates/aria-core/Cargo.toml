@@ -1,0 +1,28 @@
+[package]
+name = "aria-core"
+version = "0.1.0"
+edition = "2021"
+description = "ARIA manifest parsing, semantic graph, and validation rules"
+
+[dependencies]
+serde = { workspace = true }
+serde_yaml = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+indexmap = { workspace = true }
+rayon = { workspace = true }
+jsonschema = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+salsa = { workspace = true }
+
+# YAML span tracking for LSP diagnostics
+marked-yaml = "0.4"
+
+[dev-dependencies]
+rstest = { workspace = true }
+criterion = { workspace = true }
+
+[[bench]]
+name = "validation_benchmark"
+harness = false

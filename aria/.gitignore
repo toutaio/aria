@@ -1,0 +1,26 @@
+# Rust build artifacts
+/target/
+
+# Node.js dependencies
+node_modules/
+
+# ARIA build cache
+.aria/cache/
+
+# Generated files are intentionally committed to enable code review.
+# To opt out, add *.generated.ts to your project's own .gitignore.
+# *.generated.ts
+
+# Platform binaries (managed by @aria/build-bin packages)
+packages/aria-build-bin-*/bin/
+
+# Editor
+.vscode/settings.json
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Benchmark output
+criterion/

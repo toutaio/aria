@@ -1,0 +1,11 @@
+identity:
+  address: auth.identity.authenticate.user
+  layer: 1
+
+composition:
+  pattern: PIPE
+  input_type: AuthRequest
+  output_type: AuthToken
+  error_types:
+    - AuthError.EXPIRED
+    - AuthError.INVALID

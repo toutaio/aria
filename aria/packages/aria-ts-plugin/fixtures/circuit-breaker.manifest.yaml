@@ -1,0 +1,11 @@
+identity:
+  address: payment.billing.process.invoice
+  layer: 1
+
+composition:
+  pattern: CIRCUIT_BREAKER
+  input_type: InvoiceRequest
+  output_type: InvoiceResult
+  error_types:
+    - PaymentError.GATEWAY_DOWN
+  open_state_type: CircuitOpenData

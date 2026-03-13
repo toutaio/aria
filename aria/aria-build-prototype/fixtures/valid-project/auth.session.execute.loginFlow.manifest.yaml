@@ -1,0 +1,94 @@
+manifest:
+  id: "auth.session.execute.loginFlow"
+  version: "1.0.0"
+  schema_version: "1.0"
+
+  identity:
+    purpose: "Executes the complete authentication login workflow"
+    domain: "auth"
+    subdomain: "session"
+    verb: "execute"
+    entity: "loginFlow"
+
+  layer:
+    declared: L3
+    inferred: L3
+
+  contract:
+    input:
+      type: "LoginRequest"
+      constraints:
+        - "Email must be validated before calling"
+        - "Password must be hashed before calling"
+    output:
+      success: "AuthSession"
+      failure: "AuthError.UNAUTHORIZED"
+    side_effects: WRITE
+    idempotent: false
+    deterministic: false
+
+  dependencies:
+    - id: "auth.token.validate.signature"
+      layer: L1
+      stability: STABLE
+    - id: "auth.token"
+      layer: L0
+      stability: STABLE
+
+  context_budget:
+    to_use: 400
+    to_modify: 1200
+    to_extend: 2000
+    to_replace: 3000
+
+  test_contract:
+    scenarios:
+      - scenario: "Valid credentials produce a new auth session"
+      - scenario: "Invalid credentials return UNAUTHORIZED"
+      - scenario: "Duplicate login is idempotent within session window"
+    coverage_required: true
+    mutation_testing: true
+
+  behavioral_contract:
+    max_latency_p99: "500ms"
+    max_latency_p999: "1000ms"
+    max_calls_per_second: 100
+    max_calls_per_user_per_second: 5
+    idempotent_within: "not_applicable"
+    timeout: "3000ms"
+    max_retries: 3
+    retry_strategy: "exponential_backoff"
+
+  stability: STABLE
+
+  lifecycle:
+    phase: STABLE
+    stable_since: "2024-01-01T00:00:00Z"
+
+  health_contract:
+    sla_latency_p99: "500ms"
+    sla_availability: "99.9%"
+    degraded_threshold:
+      error_rate_percent: 5
+      latency_p99_multiplier: 2.0
+    circuit_open_threshold:
+      error_rate_percent: 20
+      consecutive_failures: 5
+
+  diagnostic_surface:
+    failure_indicators:
+      - symptom: "Elevated 4xx error rate"
+        check: "Check credentials format in request"
+      - symptom: "Timeout errors"
+        check: "Check downstream token validation service latency"
+    known_failure_patterns: []
+    escalation_path:
+      - layer: L1
+        handler: "auth.error.handle.atomError"
+      - layer: L3
+        handler: "auth.error.handle.workflowError"
+
+  manifest_provenance:
+    derived_by: "AI_PROPOSED"
+    reviewed_by: "HUMAN"
+    approved_at: "2024-01-01T00:00:00Z"

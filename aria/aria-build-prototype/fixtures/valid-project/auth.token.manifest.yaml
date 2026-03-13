@@ -1,0 +1,36 @@
+manifest:
+  id: "auth.token"
+  version: "1.0.0"
+  schema_version: "1.0"
+
+  identity:
+    purpose: "Branded type for validated authentication tokens"
+    domain: "auth"
+    subdomain: "token"
+    verb: "token"
+    entity: "token"
+
+  layer:
+    declared: L0
+    inferred: L0
+
+  contract:
+    input:
+      type: "string"
+    output:
+      success: "AuthToken"
+      failure: "AuthError.INVALID"
+    side_effects: NONE
+    idempotent: true
+    deterministic: true
+
+  stability: STABLE
+
+  lifecycle:
+    phase: STABLE
+    stable_since: "2024-01-01T00:00:00Z"
+
+  manifest_provenance:
+    derived_by: "STATIC_ANALYSIS"
+    reviewed_by: "REVIEWER_AGENT"
+    approved_at: "2024-01-01T00:00:00Z"

@@ -1,0 +1,28 @@
+{
+  "name": "aria-build-prototype",
+  "version": "0.1.0",
+  "description": "Phase 1 Node.js prototype of aria-build check — manifest validation and naming enforcement",
+  "type": "module",
+  "bin": {
+    "aria-build": "./src/cli.js"
+  },
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/.bin/jest",
+    "lint": "eslint src/ test/"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": ["**/test/**/*.test.js"],
+    "transform": {}
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "yaml": "^2.6.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

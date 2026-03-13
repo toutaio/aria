@@ -1,0 +1,20 @@
+[package]
+name = "aria-lsp"
+version = "0.1.0"
+edition = "2021"
+description = "ARIA Language Server Protocol server for real-time IDE validation"
+
+[[bin]]
+name = "aria-lsp"
+path = "src/main.rs"
+
+[dependencies]
+aria-core = { path = "../aria-core" }
+tower-lsp = { workspace = true }
+tokio = { workspace = true }
+dashmap = { workspace = true }
+serde_json = { workspace = true }
+serde = { workspace = true }
+anyhow = { workspace = true }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }

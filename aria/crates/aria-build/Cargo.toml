@@ -1,0 +1,21 @@
+[package]
+name = "aria-build"
+version = "0.1.0"
+edition = "2021"
+description = "ARIA build tool — manifest validation, code generation, bundle building"
+
+[[bin]]
+name = "aria-build"
+path = "src/main.rs"
+
+[dependencies]
+aria-core = { path = "../aria-core" }
+clap = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_yaml = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+rayon = { workspace = true }
