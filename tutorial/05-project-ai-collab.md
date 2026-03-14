@@ -87,13 +87,40 @@ The `ROUTE` pattern means: given the incoming request, exactly one branch fires 
 
 ## 2. The Semantic Graph
 
-When you run `aria-build bundle ./src`, the CLI reads every `.manifest.yaml` in the source tree and assembles them into a single semantic graph snapshot — a JSON document where every node is an ARU and every edge is a declared pattern instance.
+When you run `aria-build bundle ./src`, the CLI assembles all **`stability: STABLE`** manifests into a semantic graph snapshot. At this point in the tutorial every ARU is correctly marked `EXPERIMENTAL` — they work, but they haven't been proven in real-world usage yet. Promoting to `STABLE` is a deliberate act, covered in a later chapter.
+
+To bundle the full graph while keeping all manifests `EXPERIMENTAL`, use the `bundle:dev` script included in the project. It temporarily promotes to `STABLE` for the bundle run, then reverts every file automatically:
 
 ```bash
-aria-build bundle ./src
+npm run bundle:dev
 ```
 
-The output file (typically `aria-bundle.json`) contains:
+```
+Temporarily promoted 9 EXPERIMENTAL manifest(s).
+Bundle written to ./src/.aria/manifest-bundle.json
+  9 STABLE manifests
+  bundle_version: sha256:...
+Reverted 9 manifest(s) back to EXPERIMENTAL.
+```
+
+When you are ready to permanently promote one or more manifests — because they've been tested and depended upon — use the interactive promote script:
+
+```bash
+npm run promote
+```
+
+```
+EXPERIMENTAL manifests:
+
+  [1] src/url/analytics/emit.clickEvent.manifest.yaml
+  ...
+  [9] src/url/types.manifest.yaml
+
+Enter numbers to promote (comma-separated), 'all', or 'none':
+> 1,2
+```
+
+For now, use `npm run bundle:dev` throughout this tutorial. The output file `src/.aria/manifest-bundle.json` contains:
 
 ```json
 {
