@@ -191,7 +191,7 @@ manifest:
     output:
       success: "ValidatedShortCode"
       failure: "FormatError { code: TOO_LONG | INVALID_CHARS | EMPTY }"
-    side_effects: NONE          # ← CRITICAL: must be set. Options: NONE | READ | WRITE | EVENT
+    side_effects: NONE          # ← CRITICAL: must be set. Options: NONE | READ | WRITE | EXTERNAL
     idempotent: true
     deterministic: true
 
@@ -227,9 +227,9 @@ This field **must** be declared on every ARU. It tells callers — and AI agents
 | `NONE` | The ARU is pure: same input always produces same output, no external state touched |
 | `READ` | The ARU reads from a database, file system, or external service |
 | `WRITE` | The ARU writes to a database, file system, cache, or any persistent store |
-| `EVENT` | The ARU emits events or calls external APIs |
+| `EXTERNAL` | The ARU emits events or calls external APIs |
 
-Why does this matter? Because it determines whether an operation is safe to **retry** (NONE and READ are always safe), **parallelize** (NONE is always safe, others require care), or **rollback** (WRITE and EVENT require compensation logic). When an AI agent is composing a pipeline or diagnosing a failure, `side_effects` is one of the first fields it reads.
+Why does this matter? Because it determines whether an operation is safe to **retry** (NONE and READ are always safe), **parallelize** (NONE is always safe, others require care), or **rollback** (WRITE and EXTERNAL require compensation logic). When an AI agent is composing a pipeline or diagnosing a failure, `side_effects` is one of the first fields it reads.
 
 Omitting `side_effects` is a defect. `aria-build check` will flag it at compliance level 1.
 
@@ -335,7 +335,7 @@ url.pipeline.orchestrate.shorten
 response  url.analytics.emit.clickEvent
 ```
 
-After the shorten pipeline completes, the result is forked: one branch returns the response to the caller, the other sends an analytics event. The analytics branch is fire-and-forget — a `side_effects: EVENT` ARU that doesn't block the response.
+After the shorten pipeline completes, the result is forked: one branch returns the response to the caller, the other sends an analytics event. The analytics branch is fire-and-forget — a `side_effects: EXTERNAL` ARU that doesn't block the response.
 
 ---
 

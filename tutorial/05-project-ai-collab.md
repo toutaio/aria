@@ -47,7 +47,7 @@ manifest:
     output:
       success: "HttpResponse"
       failure: "HttpError.BAD_REQUEST | HttpError.NOT_FOUND | HttpError.RATE_LIMITED | HttpError.INTERNAL"
-    side_effects: EVENT
+    side_effects: EXTERNAL
     idempotent: false
     deterministic: false
   dependencies:

@@ -133,7 +133,7 @@ manifest:
     output:
       success: "ShortenedLink"
       failure: "FormatError.TOO_LONG | FormatError.INVALID_CHARS | StoreError.DUPLICATE | StoreError.STORE_UNAVAILABLE"
-    side_effects: EVENT
+    side_effects: EXTERNAL
     idempotent: false
     deterministic: false
   dependencies:
@@ -151,6 +151,19 @@ manifest:
     to_modify: 400
     to_extend: 600
     to_replace: 350
+  behavioral_contract:
+    max_retries: 0
+    retry_strategy: none
+    timeout: 5000ms
+  health_contract:
+    sla_latency_p99: 2000ms
+    sla_availability: "99.9%"
+  diagnostic_surface:
+    failure_indicators:
+      - symptom: "StoreError.DUPLICATE returned"
+        check: "URL was already shortened; client should handle idempotency"
+      - symptom: "StoreError.STORE_UNAVAILABLE returned"
+        check: "in-memory store unreachable; check store module import"
   test_contract:
     scenarios:
       - scenario: "valid URL returns ShortenedLink and fires analytics event"
@@ -236,7 +249,7 @@ manifest:
     output:
       success: "void"
       failure: "AnalyticsError.EMIT_FAILED"
-    side_effects: EVENT
+    side_effects: EXTERNAL
     idempotent: false
     deterministic: false
   dependencies:
@@ -366,7 +379,7 @@ manifest:
     output:
       success: "void"
       failure: "AuditError.EMIT_FAILED"
-    side_effects: EVENT
+    side_effects: EXTERNAL
     idempotent: false
     deterministic: false
   dependencies:
@@ -542,6 +555,7 @@ describe("url.pipeline.orchestrate.shorten", () => {
 
   it("analytics failure does not affect main response", async () => {
     vi.spyOn(analytics, "emitClickEvent").mockRejectedValue(new Error("analytics down"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
     const result = await orchestrateShorten("https://example.com/resilient" as OriginalUrl);
     expect(result.ok).toBe(true);
   });
