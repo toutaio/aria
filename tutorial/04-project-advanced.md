@@ -117,7 +117,10 @@ Step 3 is fire-and-forget. If analytics fails, the caller still gets a successfu
 manifest:
   id: "url.pipeline.orchestrate.shorten"
   version: "1.0.0"
-  layer: L4
+  schema_version: "1.0"
+  layer:
+    declared: L4
+    inferred: L4
   identity:
     purpose: "orchestrates the full URL shortening pipeline: create, persist, emit analytics"
     domain: "url"
@@ -129,28 +132,33 @@ manifest:
       type: "OriginalUrl"
     output:
       success: "ShortenedLink"
-      failure: "FormatError | StoreError"
-    side_effects: EVENT          # via emitClickEvent fork
+      failure: "FormatError.TOO_LONG | FormatError.INVALID_CHARS | StoreError.DUPLICATE | StoreError.STORE_UNAVAILABLE"
+    side_effects: EVENT
     idempotent: false
     deterministic: false
   dependencies:
     - id: "url.link.create.fromOriginal"
       layer: L2
+      stability: EXPERIMENTAL
     - id: "url.store.persist.link"
       layer: L3
+      stability: EXPERIMENTAL
     - id: "url.analytics.emit.clickEvent"
       layer: L3
+      stability: EXPERIMENTAL
   context_budget:
     to_use: 120
     to_modify: 400
     to_extend: 600
     to_replace: 350
   test_contract:
-    - scenario: "valid URL returns ShortenedLink and fires analytics event"
-    - scenario: "invalid URL format returns FormatError"
-    - scenario: "store duplicate returns StoreError DUPLICATE"
-    - scenario: "analytics failure does not affect main response"
+    scenarios:
+      - scenario: "valid URL returns ShortenedLink and fires analytics event"
+      - scenario: "store duplicate returns StoreError DUPLICATE"
+      - scenario: "analytics failure does not affect main response"
   stability: EXPERIMENTAL
+  lifecycle:
+    phase: DRAFT
   connections:
     - pattern: PIPE
       target: "url.link.create.fromOriginal"
@@ -158,6 +166,10 @@ manifest:
       target: "url.store.persist.link"
     - pattern: FORK
       target: "url.analytics.emit.clickEvent"
+  manifest_provenance:
+    derived_by: HUMAN_DECLARED
+    reviewed_by: HUMAN
+    approved_at: "2026-03-14T00:00:00Z"
 ```
 
 The `connections` block declares three relationships: two sequential PIPEs and one FORK. The semantic graph will render these as distinct edge types, making it immediately visible that analytics is a non-blocking side channel.
@@ -208,7 +220,10 @@ export async function emitClickEvent(link: ShortenedLink): Promise<void> {
 manifest:
   id: "url.analytics.emit.clickEvent"
   version: "1.0.0"
-  layer: L3
+  schema_version: "1.0"
+  layer:
+    declared: L3
+    inferred: L3
   identity:
     purpose: "emits a click event to the analytics stream when a URL is shortened"
     domain: "url"
@@ -220,20 +235,42 @@ manifest:
       type: "ShortenedLink"
     output:
       success: "void"
-      failure: "never (errors are swallowed — analytics must not break the main flow)"
+      failure: "AnalyticsError.EMIT_FAILED"
     side_effects: EVENT
     idempotent: false
     deterministic: false
   dependencies:
     - id: "url.types"
       layer: L0
+      stability: EXPERIMENTAL
+  behavioral_contract:
+    max_retries: 0
+    retry_strategy: none
+    timeout: 200ms
+  health_contract:
+    sla_latency_p99: 100ms
+    sla_availability: 95.0%
+  diagnostic_surface:
+    failure_indicators:
+      - symptom: "AnalyticsError.EMIT_FAILED returned"
+        check: "analytics service is unreachable"
   context_budget:
     to_use: 80
     to_modify: 250
     to_extend: 350
     to_replace: 200
+  test_contract:
+    scenarios:
+      - scenario: "emits a click event without throwing"
+      - scenario: "logs a JSON event with the correct shortCode and type"
   stability: EXPERIMENTAL
+  lifecycle:
+    phase: DRAFT
   connections: []
+  manifest_provenance:
+    derived_by: HUMAN_DECLARED
+    reviewed_by: HUMAN
+    approved_at: "2026-03-14T00:00:00Z"
 ```
 
 `connections: []` here is correct — `emit.clickEvent` is a leaf node. The connection is declared on the *caller* (the orchestrator), not the callee.
@@ -313,7 +350,10 @@ Use FORK when you genuinely have multiple consumers of the same data. Use OBSERV
 manifest:
   id: "url.audit.emit.shortenEvent"
   version: "1.0.0"
-  layer: L3
+  schema_version: "1.0"
+  layer:
+    declared: L3
+    inferred: L3
   identity:
     purpose: "emits an audit log event whenever a URL is shortened"
     domain: "url"
@@ -325,20 +365,41 @@ manifest:
       type: "ShortenedLink"
     output:
       success: "void"
-      failure: "never"
+      failure: "AuditError.EMIT_FAILED"
     side_effects: EVENT
     idempotent: false
     deterministic: false
   dependencies:
     - id: "url.types"
       layer: L0
+      stability: EXPERIMENTAL
+  behavioral_contract:
+    max_retries: 0
+    retry_strategy: none
+    timeout: 200ms
+  health_contract:
+    sla_latency_p99: 100ms
+    sla_availability: 99.0%
+  diagnostic_surface:
+    failure_indicators:
+      - symptom: "AuditError.EMIT_FAILED returned"
+        check: "audit log service is unreachable"
   context_budget:
     to_use: 70
     to_modify: 200
     to_extend: 300
     to_replace: 180
+  test_contract:
+    scenarios:
+      - scenario: "emits an audit event without throwing"
   stability: EXPERIMENTAL
+  lifecycle:
+    phase: DRAFT
   connections: []
+  manifest_provenance:
+    derived_by: HUMAN_DECLARED
+    reviewed_by: HUMAN
+    approved_at: "2026-03-14T00:00:00Z"
 ```
 
 Add the OBSERVE connection to the L4 orchestrator manifest:
@@ -388,7 +449,7 @@ Expected output:
 ✓ url.shortcode.generate.hash         L1  EXPERIMENTAL
 ✓ url.link.create.fromOriginal        L2  EXPERIMENTAL
 ✓ url.store.persist.link              L3  EXPERIMENTAL
-✓ url.store.resolve.shortCode         L3  EXPERIMENTAL
+✓ url.store.execute.shortCode         L3  EXPERIMENTAL
 ✓ url.analytics.emit.clickEvent       L3  EXPERIMENTAL
 ✓ url.audit.emit.shortenEvent         L3  EXPERIMENTAL
 ✓ url.pipeline.orchestrate.shorten    L4  EXPERIMENTAL
@@ -400,6 +461,119 @@ Patterns validated: PIPE ×4, VALIDATE ×1, FORK ×1, CIRCUIT_BREAKER ×1, OBSER
 Eight distinct patterns have now appeared across this codebase. The check validates not just that each manifest is structurally valid, but that every `target` in every `connections` entry resolves to a known ARU ID — there are no dangling references.
 
 If you rename an ARU — say, from `url.store.persist.link` to `url.store.save.link` — the check will immediately flag every manifest that references the old name. You get a refactor-safe dependency graph for free.
+
+---
+
+## 8. Testing L4 Orchestration
+
+L4 orchestrators are tested with two complementary approaches:
+
+1. **Unit tests with mocks** — verify the orchestration logic (sequencing, error propagation, FORK behaviour) in isolation, with L3 dependencies mocked
+2. **Integration tests** — verify the full chain with real L3 implementations
+
+### `src/url/analytics/emit.clickEvent.test.ts`
+
+The analytics emitter is pure L3 and can be tested directly:
+
+```typescript
+import { describe, it, expect, vi } from "vitest";
+import { emitClickEvent } from "./emit.clickEvent";
+import type { ShortenedLink } from "../types";
+
+const link: ShortenedLink = {
+  shortCode: "abc123" as any,
+  originalUrl: "https://example.com" as any,
+  createdAt: new Date("2026-01-01"),
+};
+
+describe("url.analytics.emit.clickEvent", () => {
+  it("emits a click event without throwing", async () => {
+    await expect(emitClickEvent(link)).resolves.toBeUndefined();
+  });
+
+  it("logs a JSON event with the correct shortCode and type", async () => {
+    const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+    await emitClickEvent(link);
+    expect(spy).toHaveBeenCalledOnce();
+    const logged = spy.mock.calls[0][1] as string;
+    const event = JSON.parse(logged);
+    expect(event.shortCode).toBe("abc123");
+    expect(event.type).toBe("SHORTEN");
+    spy.mockRestore();
+  });
+});
+```
+
+### `src/url/pipeline/orchestrate.shorten.test.ts`
+
+The L4 orchestrator test mocks `emitClickEvent` to avoid console noise and to control analytics failure behaviour. The store is real — it exercises the PIPE chain end-to-end.
+
+```typescript
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { orchestrateShorten } from "./orchestrate.shorten";
+import { clearStore } from "../store/in-memory.store";
+import * as analytics from "../analytics/emit.clickEvent";
+import type { OriginalUrl } from "../types";
+
+describe("url.pipeline.orchestrate.shorten", () => {
+  beforeEach(() => clearStore());
+
+  it("valid URL returns ShortenedLink and fires analytics event", async () => {
+    const spy = vi.spyOn(analytics, "emitClickEvent").mockResolvedValue(undefined);
+    const result = await orchestrateShorten("https://example.com" as OriginalUrl);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.shortCode).toHaveLength(6);
+      expect(result.value.originalUrl).toBe("https://example.com");
+    }
+    // give fire-and-forget a tick to execute
+    await new Promise((r) => setTimeout(r, 0));
+    expect(spy).toHaveBeenCalledOnce();
+    spy.mockRestore();
+  });
+
+  it("duplicate URL returns StoreError DUPLICATE", async () => {
+    vi.spyOn(analytics, "emitClickEvent").mockResolvedValue(undefined);
+    await orchestrateShorten("https://example.com" as OriginalUrl);
+    const result = await orchestrateShorten("https://example.com" as OriginalUrl);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("DUPLICATE");
+  });
+
+  it("analytics failure does not affect main response", async () => {
+    vi.spyOn(analytics, "emitClickEvent").mockRejectedValue(new Error("analytics down"));
+    const result = await orchestrateShorten("https://example.com/resilient" as OriginalUrl);
+    expect(result.ok).toBe(true);
+  });
+});
+```
+
+**Key patterns to notice**:
+
+- **Mock the fork, not the pipeline** — `emitClickEvent` is mocked because it's fire-and-forget; the PIPE chain (create → persist) runs for real to test wiring
+- **`await new Promise(r => setTimeout(r, 0))`** — gives the micro-task queue a tick so the fire-and-forget `.catch` runs before the assertion
+- **`clearStore()` in `beforeEach`** — mandatory for any test that writes to the store
+
+### Running All Tests
+
+```bash
+npm test
+```
+
+Expected output at the end of Chapter 4:
+
+```
+✓ src/url/shortcode/validate.format.test.ts     (4 tests)
+✓ src/url/shortcode/generate.hash.test.ts       (3 tests)
+✓ src/url/link/create.fromOriginal.test.ts      (3 tests)
+✓ src/url/store/persist.link.test.ts            (2 tests)
+✓ src/url/store/execute.shortCode.test.ts       (2 tests)
+✓ src/url/analytics/emit.clickEvent.test.ts     (2 tests)
+✓ src/url/pipeline/orchestrate.shorten.test.ts  (3 tests)
+
+Test Files  7 passed (7)
+     Tests  19 passed (19)
+```
 
 ---
 

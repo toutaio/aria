@@ -31,7 +31,10 @@ The L5 verb vocabulary reflects this boundary role: `expose`, `integrate`, `guar
 manifest:
   id: "url.domain.expose.api"
   version: "1.0.0"
-  layer: L5
+  schema_version: "1.0"
+  layer:
+    declared: L5
+    inferred: L5
   identity:
     purpose: "exposes the URL shortener domain as an HTTP API"
     domain: "url"
@@ -43,26 +46,39 @@ manifest:
       type: "HttpRequest"
     output:
       success: "HttpResponse"
-      failure: "HttpErrorResponse { status: 400 | 404 | 429 | 500 }"
-    side_effects: EVENT          # HTTP responses are observable side effects
+      failure: "HttpError.BAD_REQUEST | HttpError.NOT_FOUND | HttpError.RATE_LIMITED | HttpError.INTERNAL"
+    side_effects: EVENT
     idempotent: false
     deterministic: false
   dependencies:
     - id: "url.pipeline.orchestrate.shorten"
       layer: L4
-    - id: "url.store.resolve.shortCode"
+      stability: EXPERIMENTAL
+    - id: "url.store.execute.shortCode"
       layer: L3
+      stability: EXPERIMENTAL
   context_budget:
     to_use: 150
     to_modify: 500
     to_extend: 700
     to_replace: 400
+  test_contract:
+    scenarios:
+      - scenario: "POST /shorten with valid URL returns 200 with shortCode"
+      - scenario: "GET /:shortCode with known code returns 302 redirect"
+      - scenario: "GET /:shortCode with unknown code returns 404"
   stability: EXPERIMENTAL
+  lifecycle:
+    phase: DRAFT
   connections:
     - pattern: ROUTE
       target: "url.pipeline.orchestrate.shorten"
     - pattern: ROUTE
-      target: "url.store.resolve.shortCode"
+      target: "url.store.execute.shortCode"
+  manifest_provenance:
+    derived_by: HUMAN_DECLARED
+    reviewed_by: HUMAN
+    approved_at: "2026-03-14T00:00:00Z"
 ```
 
 The `ROUTE` pattern means: given the incoming request, exactly one branch fires — either the shorten pipeline (`POST /shorten`) or the resolve lookup (`GET /:shortCode`). All declared branches must be handled; you cannot have an implicit catch-all at the L5 boundary.
@@ -87,7 +103,7 @@ The output file (typically `aria-bundle.json`) contains:
     { "id": "url.shortcode.generate.hash", "layer": "L1", "stability": "EXPERIMENTAL" },
     { "id": "url.link.create.fromOriginal", "layer": "L2", "stability": "EXPERIMENTAL" },
     { "id": "url.store.persist.link", "layer": "L3", "stability": "EXPERIMENTAL" },
-    { "id": "url.store.resolve.shortCode", "layer": "L3", "stability": "EXPERIMENTAL" },
+    { "id": "url.store.execute.shortCode", "layer": "L3", "stability": "EXPERIMENTAL" },
     { "id": "url.analytics.emit.clickEvent", "layer": "L3", "stability": "EXPERIMENTAL" },
     { "id": "url.audit.emit.shortenEvent", "layer": "L3", "stability": "EXPERIMENTAL" },
     { "id": "url.pipeline.orchestrate.shorten", "layer": "L4", "stability": "EXPERIMENTAL" },
@@ -101,7 +117,7 @@ The output file (typically `aria-bundle.json`) contains:
     { "from": "url.pipeline.orchestrate.shorten", "to": "url.store.persist.link", "pattern": "CIRCUIT_BREAKER" },
     { "from": "url.pipeline.orchestrate.shorten", "to": "url.audit.emit.shortenEvent", "pattern": "OBSERVE" },
     { "from": "url.domain.expose.api", "to": "url.pipeline.orchestrate.shorten", "pattern": "ROUTE" },
-    { "from": "url.domain.expose.api", "to": "url.store.resolve.shortCode", "pattern": "ROUTE" }
+    { "from": "url.domain.expose.api", "to": "url.store.execute.shortCode", "pattern": "ROUTE" }
   ]
 }
 ```
@@ -182,7 +198,10 @@ The compensation for Step 2 (`url.store.delete.link`) deletes each link that was
 manifest:
   id: "url.import.execute.batch"
   version: "1.0.0"
-  layer: L3
+  schema_version: "1.0"
+  layer:
+    declared: L3
+    inferred: L3
   identity:
     purpose: "imports a batch of URLs with full rollback on partial failure"
     domain: "url"
@@ -196,23 +215,45 @@ manifest:
         - "array of 1–100 URLs"
     output:
       success: "ImportResult { imported: number, shortCodes: ShortCode[] }"
-      failure: "ImportError { code: PARTIAL_FAILURE | VALIDATION_FAILED, rolledBack: boolean }"
+      failure: "ImportError.PARTIAL_FAILURE | ImportError.VALIDATION_FAILED"
     side_effects: WRITE
     idempotent: false
     deterministic: false
   dependencies:
     - id: "url.import.validate.urls"
       layer: L1
+      stability: EXPERIMENTAL
     - id: "url.store.persist.link"
       layer: L3
+      stability: EXPERIMENTAL
     - id: "url.import.emit.completedEvent"
       layer: L3
+      stability: EXPERIMENTAL
+  behavioral_contract:
+    max_retries: 0
+    retry_strategy: none
+    timeout: 10000ms
+  health_contract:
+    sla_latency_p99: 5000ms
+    sla_availability: 99.0%
+  diagnostic_surface:
+    failure_indicators:
+      - symptom: "ImportError.PARTIAL_FAILURE returned"
+        check: "one or more persist steps failed mid-batch; check rollback completion"
+      - symptom: "ImportError.VALIDATION_FAILED returned"
+        check: "input URLs failed format validation before any writes occurred"
   context_budget:
     to_use: 150
     to_modify: 600
     to_extend: 800
     to_replace: 500
+  test_contract:
+    scenarios:
+      - scenario: "batch of valid URLs returns ImportResult with correct count"
+      - scenario: "partial persist failure triggers rollback and returns ImportError PARTIAL_FAILURE"
   stability: EXPERIMENTAL
+  lifecycle:
+    phase: DRAFT
   connections:
     - pattern: SAGA
       steps:
@@ -222,6 +263,10 @@ manifest:
           compensate: "url.store.delete.link"
         - target: "url.import.emit.completedEvent"
           compensate: "url.import.emit.rolledBackEvent"
+  manifest_provenance:
+    derived_by: HUMAN_DECLARED
+    reviewed_by: HUMAN
+    approved_at: "2026-03-14T00:00:00Z"
 ```
 
 The SAGA declaration in the `connections` block explicitly names every step and every compensation. An AI agent or a human reviewer can read this manifest and understand the full transaction topology without reading a single line of implementation code.
@@ -253,7 +298,10 @@ The `config.onTimeout: "partial"` setting means: if the timeout fires before all
 manifest:
   id: "url.import.validate.urls"
   version: "1.0.0"
-  layer: L1
+  schema_version: "1.0"
+  layer:
+    declared: L1
+    inferred: L1
   identity:
     purpose: "validates a batch of URLs concurrently within a timeout budget"
     domain: "url"
@@ -267,32 +315,146 @@ manifest:
         - "array of 1–100 URL strings"
     output:
       success: "ValidationReport { valid: string[], invalid: string[], timedOut: string[] }"
-      failure: "never — always returns a report, even partial"
+      failure: "ValidationError.EMPTY_BATCH"
     side_effects: NONE
     idempotent: true
-    deterministic: false        # timing-dependent
+    deterministic: false
   dependencies:
     - id: "url.shortcode.validate.format"
       layer: L1
+      stability: EXPERIMENTAL
   context_budget:
     to_use: 90
     to_modify: 300
     to_extend: 450
     to_replace: 250
+  test_contract:
+    scenarios:
+      - scenario: "all valid URLs returns ValidationReport with empty invalid and timedOut"
+      - scenario: "mix of valid and invalid URLs returns correct counts in each category"
   stability: EXPERIMENTAL
+  lifecycle:
+    phase: DRAFT
   connections:
     - pattern: PARALLEL_JOIN
       target: "url.shortcode.validate.format"
       config:
         timeoutMs: 5000
-        onTimeout: "partial"    # return partial result on timeout vs fail-fast
+        onTimeout: "partial"
+  manifest_provenance:
+    derived_by: HUMAN_DECLARED
+    reviewed_by: HUMAN
+    approved_at: "2026-03-14T00:00:00Z"
 ```
 
 `deterministic: false` here is notable — the function is pure in the sense that it has no side effects, but timing introduces non-determinism. The same input list may produce different `timedOut` entries depending on system load. The manifest captures this nuance.
 
 ---
 
-## 6. Human-AI Collaboration Workflow
+## 6. Testing Across All Layers
+
+With the full L0–L5 stack now defined, this section shows how to test each layer type and run the complete suite.
+
+### What to Test at Each Layer
+
+| Layer | Test type | Rationale |
+|-------|-----------|-----------|
+| L0 | None (compiler) | TypeScript enforces types at compile time |
+| L1 | Pure unit | No deps, no mocks needed — just call the function |
+| L2 | Unit + store reset | Pure but transitively imports store module |
+| L3 | Unit with `beforeEach(clearStore)` | Stateful — store must be reset between tests |
+| L4 | Unit (mock FORK targets) + integration | Mock fire-and-forget forks; PIPE chain runs real |
+| L5 | Integration | Tests the full HTTP request → response cycle |
+
+### L5 Integration Test — `src/url/domain/expose.api.test.ts`
+
+The L5 boundary test drives the HTTP layer end-to-end. At this stage the HTTP server is represented by a handler function (not a running server), but the shape is the same:
+
+```typescript
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { clearStore } from "../store/in-memory.store";
+import { orchestrateShorten } from "../pipeline/orchestrate.shorten";
+import { executeShortCode } from "../store/execute.shortCode";
+import * as analytics from "../analytics/emit.clickEvent";
+import type { OriginalUrl } from "../types";
+
+// Simulated L5 handler — in production this would be an Express/Hono/Fastify route
+async function handleShorten(body: { url: string }) {
+  if (!body.url) return { status: 400, body: { error: "url required" } };
+  const result = await orchestrateShorten(body.url as OriginalUrl);
+  if (!result.ok) {
+    const status = result.error.code === "DUPLICATE" ? 409 : 500;
+    return { status, body: { error: result.error.code } };
+  }
+  return { status: 200, body: { shortCode: result.value.shortCode } };
+}
+
+async function handleResolve(shortCode: string) {
+  const result = await executeShortCode(shortCode as any);
+  if (!result.ok) return { status: 404, body: { error: "NOT_FOUND" } };
+  return { status: 302, headers: { location: result.value.originalUrl } };
+}
+
+describe("url.domain.expose.api (integration)", () => {
+  beforeEach(() => {
+    clearStore();
+    vi.spyOn(analytics, "emitClickEvent").mockResolvedValue(undefined);
+  });
+
+  it("POST /shorten with valid URL returns 200 with shortCode", async () => {
+    const res = await handleShorten({ url: "https://example.com" });
+    expect(res.status).toBe(200);
+    expect((res.body as any).shortCode).toHaveLength(6);
+  });
+
+  it("GET /:shortCode with known code returns 302 redirect", async () => {
+    const shortenRes = await handleShorten({ url: "https://example.com" });
+    const shortCode = (shortenRes.body as any).shortCode;
+    const res = await handleResolve(shortCode);
+    expect(res.status).toBe(302);
+    expect((res.headers as any).location).toBe("https://example.com");
+  });
+
+  it("GET /:shortCode with unknown code returns 404", async () => {
+    const res = await handleResolve("xxxxxx");
+    expect(res.status).toBe(404);
+  });
+});
+```
+
+This test exercises the *full stack* from L5 down through L4, L2, L1, and L3 — with only the analytics FORK mocked. If any ARU is misconfigured, misnamed, or has a broken contract, this test will catch it.
+
+### Running the Full Suite
+
+```bash
+npm test
+```
+
+Expected output at the end of Chapter 5:
+
+```
+✓ src/url/shortcode/validate.format.test.ts       (4 tests)
+✓ src/url/shortcode/generate.hash.test.ts         (3 tests)
+✓ src/url/link/create.fromOriginal.test.ts        (3 tests)
+✓ src/url/store/persist.link.test.ts              (2 tests)
+✓ src/url/store/execute.shortCode.test.ts         (2 tests)
+✓ src/url/analytics/emit.clickEvent.test.ts       (2 tests)
+✓ src/url/pipeline/orchestrate.shorten.test.ts    (3 tests)
+✓ src/url/domain/expose.api.test.ts               (3 tests)
+
+Test Files  8 passed (8)
+     Tests  22 passed (22)
+```
+
+Run unit tests only (faster during development):
+
+```bash
+npx vitest run --exclude "**/*.integration.test.ts" --exclude "**/expose.api.test.ts"
+```
+
+---
+
+## 7. Human-AI Collaboration Workflow
 
 This is where the whole system pays off. Everything built so far — the layer boundaries, the manifests, the semantic graph, the impact analysis — is designed to make AI-assisted development *safer and more accurate*.
 
@@ -377,7 +539,7 @@ This is a fundamentally different relationship with AI tooling. Instead of "here
 
 ---
 
-## 7. Further Reading
+## 8. Further Reading
 
 The concepts introduced in this chapter are covered in depth in the documentation:
 
