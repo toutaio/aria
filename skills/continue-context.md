@@ -41,7 +41,7 @@ Rules: L0 = no side effects; L3 = no direct infrastructure calls; L4 = no busine
 ## Naming — Semantic Address
 
 ```
-[domain].[subdomain].[verb].[entity]   (all kebab-case)
+[domain].[subdomain].[verb].[entity]   (domain/subdomain/verb: kebab-case; entity: camelCase for multi-word)
 ```
 
 Verb vocabulary is **layer-locked**:

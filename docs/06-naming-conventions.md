@@ -24,7 +24,13 @@ All four segments are required for L1+ ARUs. L0 Primitives use only `[domain].[e
 | `domain` | Bounded context | `auth`, `user`, `billing`, `notification` |
 | `subdomain` | Functional area within domain | `token`, `session`, `password`, `profile` |
 | `verb` | Operation class (see below) | `validate`, `create`, `transform`, `emit` |
-| `entity` | The data subject | `token`, `email`, `invoice`, `address` |
+| `entity` | The data subject | `token`, `email`, `invoice`, `from-original` |
+
+**Segment casing rules:**
+- `domain`, `subdomain`, `verb` — **kebab-case** (lowercase, hyphens for multi-word: `short-code`, `user-profile`)
+- `entity` — **camelCase** for multi-word qualifiers (`fromToken`, `fromOriginal`, `shortCode`); plain lowercase for single-word entities (`token`, `hash`, `link`)
+
+The entity segment often acts as a *qualifier* — describing which variant or source of the entity is involved — which is why camelCase reads more naturally there (`fromOriginal` vs `from-original`).
 
 **Examples:**
 - `auth.token.validate.signature` — L1 Atom

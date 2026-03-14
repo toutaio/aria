@@ -250,3 +250,9 @@ This means:
 - Refactoring is a graph operation: swap a node, keep the edges, verify type compatibility
 
 The pattern declaration IS the design. Implementation is the execution of the design.
+
+---
+
+## Influences
+
+The pattern vocabulary draws directly from **Enterprise Integration Patterns** (Gregor Hohpe & Bobby Woolf, Addison-Wesley, 2003), which catalogued messaging and integration topologies (pipes, filters, routers, aggregators). ARIA adapts their naming (PIPE, ROUTE, FORK/JOIN) and adds patterns for distributed systems (SAGA, CIRCUIT_BREAKER, PARALLEL_JOIN) drawn from reactive and microservices literature. The critical ARIA addition is that every pattern instance is a **typed, declared edge** in the semantic graph — not an implementation detail discovered by reading code.

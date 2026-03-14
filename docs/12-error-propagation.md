@@ -3,6 +3,12 @@
 
 ---
 
+## Influence: Railway-Oriented Programming
+
+The error model in this document is a formalization of **Railway-Oriented Programming**, a pattern described by Scott Wlaschin at [fsharpforfun.com/posts/recipe-part2](https://fsharpforfun.com/posts/recipe-part2). The core metaphor — a two-track railway where success travels on one rail and failure on the other, with functions that switch tracks but never silently discard errors — maps directly onto ARIA's `Result<T, E>` propagation model. ARIA extends it by specifying the failure semantics for all 14 composition patterns and by making error handling a manifest-declared concern rather than an implementation convention.
+
+---
+
 ## The Gap (Resolved)
 
 The original gap: `03-composition-patterns.md` defined what happens when everything succeeds, but was silent on failure. This document formally resolves that gap with the railway-oriented model below. The failure semantics for all 14 composition patterns are now fully specified — see the **Complete Pattern Failure Semantics Reference** table at the end of this document.

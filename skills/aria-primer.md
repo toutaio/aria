@@ -192,7 +192,7 @@ notification.domain.expose.api       → L5 Domain
 - Manifest: `<address>.manifest.yaml`
 - Implementation (TS): `<address>.ts`
 - Tests: `<address>.test.ts`
-- All segments in **kebab-case**
+- `domain`, `subdomain`, `verb` in **kebab-case**; `entity` in **camelCase** for multi-word qualifiers (`fromToken`, `shortCode`)
 
 ---
 

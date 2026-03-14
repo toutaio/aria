@@ -3,6 +3,12 @@
 
 ---
 
+## Influence: Domain-Driven Design
+
+The concepts of **bounded context**, **ubiquitous language**, **context mapping**, and **anti-corruption layer** in this document originate from **Domain-Driven Design** (Eric Evans, Addison-Wesley, 2003) and its community extensions in *Implementing Domain-Driven Design* (Vaughn Vernon, 2013). ARIA's L5 Domain maps one-to-one to a DDD bounded context. The key adaptation: ARIA makes domain boundaries machine-readable (declared in manifests and enforced by `aria-build check`) rather than implicit agreements between teams.
+
+---
+
 ## The Foundational Assumption Problem
 
 Every ARIA document from 01 onward assumes that L5 domain boundaries exist and are correctly drawn. The layer ownership model says "humans define L5 domain boundaries." The semantic graph assumes bounded contexts. The semantic address format begins with `[domain]`.

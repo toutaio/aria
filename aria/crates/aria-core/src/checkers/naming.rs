@@ -2,6 +2,42 @@ use std::path::Path;
 use std::collections::{HashMap, HashSet};
 use crate::manifest::{Manifest, Layer};
 use crate::checker::{Diagnostic, CheckResult};
+
+// ── Casing helpers ────────────────────────────────────────────────────────────
+
+/// `domain`, `subdomain`, and `verb` segments must be kebab-case:
+/// all lowercase ASCII alphanumeric, optional interior hyphens, no leading/trailing hyphens,
+/// no consecutive hyphens, no uppercase, no underscores.
+fn is_kebab_case(s: &str) -> bool {
+    !s.is_empty()
+        && s.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+        && !s.starts_with('-')
+        && !s.ends_with('-')
+        && !s.contains("--")
+}
+
+/// `entity` segment (L1+) must be either:
+///   - All-lowercase single word (`token`, `hash`, `link`)
+///   - camelCase multi-word qualifier (`fromToken`, `fromOriginal`, `shortCode`):
+///     starts lowercase, contains at least one uppercase letter, no hyphens or underscores.
+fn is_valid_entity(s: &str) -> bool {
+    if s.is_empty() { return false; }
+    let first = s.chars().next().unwrap();
+    if !first.is_ascii_lowercase() { return false; }
+    // No hyphens or underscores allowed
+    if s.contains('-') || s.contains('_') { return false; }
+    // All characters must be ASCII alphanumeric
+    s.chars().all(|c| c.is_ascii_alphanumeric())
+}
+
+/// `entity` segment for L0 ARUs must be PascalCase (`TokenString`, `EmailAddress`)
+/// or all-lowercase for single-word primitives.
+fn is_valid_l0_entity(s: &str) -> bool {
+    if s.is_empty() { return false; }
+    if s.contains('-') || s.contains('_') { return false; }
+    s.chars().all(|c| c.is_ascii_alphanumeric())
+}
+
 fn verb_to_layer(verb: &str) -> Option<Layer> {
     match verb {
         "validate" | "transform" | "compute" | "generate" |
@@ -81,15 +117,55 @@ pub fn check_naming_slice(manifests: &[(&Path, &Manifest)]) -> CheckResult {
                 continue;
             }
             Some(parts) if parts.is_l0 => {
-                // L0 address — only validate layer consistency
+                // L0 address — validate layer consistency and domain casing
                 if m.layer.declared != Layer::L0 {
                     diagnostics.push(Diagnostic::error(
                         *file, 0, 0,
                         format!("L0 address format '{}' requires layer.declared: L0, got {:?}", id, m.layer.declared),
                     ));
                 }
+                if !is_kebab_case(parts.domain) {
+                    diagnostics.push(Diagnostic::error(
+                        *file, 0, 0,
+                        format!("Segment 'domain' in '{}' must be kebab-case (got '{}')", id, parts.domain),
+                    ));
+                }
+                if !is_valid_l0_entity(parts.entity) {
+                    diagnostics.push(Diagnostic::error(
+                        *file, 0, 0,
+                        format!("Segment 'entity' in L0 address '{}' must be PascalCase or all-lowercase (got '{}')", id, parts.entity),
+                    ));
+                }
             }
             Some(parts) => {
+                // ── Segment casing checks ─────────────────────────────────
+                if !is_kebab_case(parts.domain) {
+                    diagnostics.push(Diagnostic::error(
+                        *file, 0, 0,
+                        format!("Segment 'domain' in '{}' must be kebab-case (got '{}')", id, parts.domain),
+                    ));
+                }
+                if let Some(sub) = parts.subdomain {
+                    if !is_kebab_case(sub) {
+                        diagnostics.push(Diagnostic::error(
+                            *file, 0, 0,
+                            format!("Segment 'subdomain' in '{}' must be kebab-case (got '{}')", id, sub),
+                        ));
+                    }
+                }
+                // verb is validated against the known vocabulary below, which
+                // already guarantees it is lowercase — no extra check needed.
+                if !is_valid_entity(parts.entity) {
+                    diagnostics.push(Diagnostic::error(
+                        *file, 0, 0,
+                        format!(
+                            "Segment 'entity' in '{}' must be all-lowercase or camelCase (got '{}') \
+                             — use 'fromOriginal' not 'from-original' or 'FromOriginal'",
+                            id, parts.entity
+                        ),
+                    ));
+                }
+
                 let verb = parts.verb.unwrap();
                 match verb_to_layer(verb) {
                     None => {

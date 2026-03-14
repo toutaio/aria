@@ -32,19 +32,25 @@ If any of these commands fail or print a version below the minimum, see the [Tro
 
 The `aria-build` CLI is the primary tool for working with ARIA manifests. It validates manifests against the schema, checks compliance rules, builds the semantic graph, and generates TypeScript wrappers for composition patterns.
 
-> **Version note**: This tutorial was written and verified against `aria-build` **v0.1.x**. If you are using a newer version, all commands shown here should still work, but output formatting may differ slightly.
+> **Important**: The ARIA `aria-build` CLI is **not** the npm package named `aria-build` (which is an unrelated TypeScript bundler). Install it by building from source as shown below.
 
-Install the CLI globally via npm:
+Build and install the CLI from the ARIA repository:
 
 ```bash
-npm install -g aria-build
+# From the root of your local aria-architecture clone:
+cd aria
+cargo build --release --bin aria-build
+# Copy the binary somewhere on your PATH, e.g.:
+cp target/release/aria-build ~/.cargo/bin/aria-build
 ```
+
+> **Prerequisites**: Requires [Rust](https://rustup.rs) (v1.75+). Run `cargo --version` to confirm it is installed.
 
 Verify the installation succeeded:
 
 ```bash
 aria-build --version
-# Expected output: aria-build/0.1.x
+# Expected output: aria-build 0.1.0
 ```
 
 Verify the key subcommands are available:
@@ -204,7 +210,7 @@ aria-build check ./src
 Expected output for a fresh project with no manifest files yet:
 
 ```
-✓ No manifests found in ./src — nothing to check.
+[WARN] No *.manifest.yaml files found in ./src
 ```
 
 This is correct. An empty project has nothing to validate. Once you start adding manifests in Chapter 3, this command will verify that they're well-formed and that layer rules are respected.
@@ -214,7 +220,7 @@ You can also confirm that `aria-build` can find your config:
 ```bash
 aria-build check
 # With no argument, reads src path from aria.config.yaml
-# Same output: ✓ No manifests found in ./src — nothing to check.
+# Same output: [WARN] No *.manifest.yaml files found in ./src
 ```
 
 If both commands succeed, your environment is ready.
@@ -225,15 +231,28 @@ If both commands succeed, your environment is ready.
 
 ### Problem: `aria-build: command not found`
 
-**Cause**: npm's global `bin` directory is not on your `PATH`.
+**Cause**: The binary was not copied to a directory on your `PATH`.
 
-**Resolution**:
+**Resolution**: Copy it to `~/.cargo/bin/` (added to `PATH` by `rustup`) or any other directory on your `PATH`:
 ```bash
-npm config get prefix          # shows your npm prefix, e.g. /usr/local or /home/user/.npm-global
-export PATH="$(npm config get prefix)/bin:$PATH"
+cp /path/to/aria-architecture/aria/target/release/aria-build ~/.cargo/bin/
 ```
 
-To make this permanent, add the `export PATH` line to your `~/.bashrc` (bash) or `~/.zshrc` (zsh) and restart your terminal.
+---
+
+### Problem: `aria-build check` throws "Entry file is not exist."
+
+**Cause**: The wrong `aria-build` package is installed — `npm install -g aria-build` installs an unrelated TypeScript bundler that happens to share the name.
+
+**Resolution**: Build and install the correct binary from source (see [Install the `aria-build` CLI](#install-the-aria-build-cli) above). If the npm shim is shadowing the binary, overwrite it:
+```bash
+# Find where the npm shim lives:
+which aria-build
+# Copy the correct binary there:
+cp /path/to/aria-architecture/aria/target/release/aria-build $(which aria-build)
+# Verify:
+aria-build --version   # should print: aria-build 0.1.0
+```
 
 ---
 

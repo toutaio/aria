@@ -112,7 +112,7 @@ Every ARU has a **semantic address** — a dot-separated name that encodes its p
 
 All four segments are required for L1 and above. L0 primitives use only `[domain].[entity]` — they don't have a verb because they don't perform operations.
 
-All segments use **kebab-case** (lowercase, hyphens for multi-word segments).
+The `domain`, `subdomain`, and `verb` segments use **kebab-case** (lowercase, hyphens for multi-word). The `entity` segment uses **camelCase** for multi-word qualifiers (`fromOriginal`, `shortCode`) and plain lowercase for single words (`hash`, `link`).
 
 ### Step-by-Step Worked Example
 

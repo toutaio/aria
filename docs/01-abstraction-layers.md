@@ -134,3 +134,13 @@ Each layer becomes an isolated "work zone" for an AI agent. An agent assigned to
 - Cannot accidentally break Layer 4+ by changing Layer 2 internals
 
 This is the **containment principle**: AI mistakes are layer-bounded.
+
+---
+
+## Influences
+
+The layer naming (Atom, Molecule, Organism) is adapted from **Atomic Design** by Brad Frost (2013), which proposed the same chemistry metaphor for UI component hierarchies. ARIA extends it with Primitive (L0), System (L4), and Domain (L5), and applies it to software modules rather than UI components.
+
+The strict unidirectional dependency rule — each layer may only depend on layers below it — is the central structural rule of **Clean Architecture** (Robert C. Martin, 2017) and **Hexagonal Architecture** (Alistair Cockburn, 2005). ARIA enforces it mechanically via `aria-build check` rather than by convention.
+
+The L5 Domain layer maps directly to a **Bounded Context** from **Domain-Driven Design** (Eric Evans, 2003). See `22-domain-decomposition.md` for the full protocol.

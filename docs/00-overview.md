@@ -46,6 +46,30 @@ The central thesis:
 
 ---
 
+## Prior Art & Influences
+
+ARIA synthesizes ideas from several established fields. These are not reinventions — they are adaptations of proven concepts to the specific constraints of AI-assisted development.
+
+| Concept | Origin | How ARIA Adapts It |
+|---|---|---|
+| Atom / Molecule / Organism layer names | **Atomic Design** — Brad Frost (2013) | Applied to software modules instead of UI components; extended with Primitive, System, and Domain layers |
+| Strict layer dependency rules | **Clean Architecture** — Robert C. Martin (2017) | Dependency direction enforced mechanically via manifest validation rather than convention |
+| Bounded contexts, ubiquitous language | **Domain-Driven Design** — Eric Evans (2003) | L5 Domain maps directly to a DDD bounded context |
+| Hexagonal ports-and-adapters | **Hexagonal Architecture** — Alistair Cockburn (2005) | Infrastructure adapters live at L1/L2 so L3 organisms stay free of I/O concerns |
+| Composition pattern vocabulary | **Enterprise Integration Patterns** — Hohpe & Woolf (2003) | Named patterns (PIPE, SAGA, CIRCUIT_BREAKER…) make inter-ARU topology machine-readable |
+| Railway-oriented error model | **Railway-Oriented Programming** — Scott Wlaschin (fsharpforfun.com) | Formalized as the error-propagation semantics for all 14 composition patterns (see `12-error-propagation.md`) |
+
+### Further Reading
+
+- Brad Frost — *Atomic Design* (atomicdesign.bradfrost.com, 2016)
+- Robert C. Martin — *Clean Architecture* (Prentice Hall, 2017)
+- Eric Evans — *Domain-Driven Design* (Addison-Wesley, 2003)
+- Alistair Cockburn — *Hexagonal Architecture* (alistair.cockburn.us/hexagonal-architecture, 2005)
+- Gregor Hohpe & Bobby Woolf — *Enterprise Integration Patterns* (Addison-Wesley, 2003)
+- Scott Wlaschin — *Railway Oriented Programming* (fsharpforfun.com/posts/recipe-part2)
+
+---
+
 ## Design Philosophy
 
 - **Humans define meaning, AI fills implementation** — humans own L0 (type vocabulary) and L5 (domain boundaries); AI operates primarily in L1–L4. See `14-human-ai-collaboration.md`.

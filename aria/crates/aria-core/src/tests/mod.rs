@@ -107,6 +107,48 @@ mod naming_tests {
         let results = check_naming_slice(&[(&path, &manifest)]);
         assert!(results.iter().any(|d| d.message.contains("Domain")));
     }
+
+    fn make_manifest_with_id(id: &str) -> Manifest {
+        // Use a verb consistent with L1 so layer checks pass
+        make_l1_manifest(id, "validate", Layer::L1, Layer::L1)
+    }
+
+    // ── Segment casing tests ──────────────────────────────────────────────────
+
+    #[rstest]
+    // Valid: all-lowercase entity
+    #[case("url.link.create.original", false)]
+    // Valid: camelCase entity
+    #[case("url.link.create.fromOriginal", false)]
+    #[case("url.store.resolve.shortCode", false)]
+    #[case("auth.session.create.fromToken", false)]
+    // Invalid: kebab-case entity
+    #[case("url.link.create.from-original", true)]
+    #[case("url.store.resolve.short-code", true)]
+    // Invalid: PascalCase entity (reserved for L0 types)
+    #[case("url.link.create.FromOriginal", true)]
+    // Invalid: uppercase domain
+    #[case("URL.link.create.fromOriginal", true)]
+    // Invalid: uppercase subdomain
+    #[case("url.Link.create.fromOriginal", true)]
+    // Invalid: underscore in domain
+    #[case("url_short.link.create.fromOriginal", true)]
+    // Invalid: underscore in entity
+    #[case("url.link.create.from_original", true)]
+    fn test_segment_casing(#[case] id: &str, #[case] expect_error: bool) {
+        let manifest = make_manifest_with_id(id);
+        let path = std::path::PathBuf::from("test.manifest.yaml");
+        let results = check_naming_slice(&[(&path, &manifest)]);
+        let errors: Vec<_> = results.iter()
+            .filter(|d| matches!(d.severity, crate::checker::Severity::Error))
+            .filter(|d| d.message.contains("kebab-case") || d.message.contains("camelCase") || d.message.contains("entity"))
+            .collect();
+        if expect_error {
+            assert!(!errors.is_empty(), "Expected casing error for id '{id}'");
+        } else {
+            assert!(errors.is_empty(), "Expected no casing error for id '{id}': {:?}", errors);
+        }
+    }
 }
 
 #[cfg(test)]

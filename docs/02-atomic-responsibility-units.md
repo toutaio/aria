@@ -151,3 +151,9 @@ test_contract:
 ```
 
 These scenarios are the behavioral contract made executable. An AI generating an ARU implementation writes code until all scenarios pass — the scenarios are the definition of "done."
+
+---
+
+## Influences
+
+The *atomic* metaphor — composing large systems from small, single-responsibility units — is shared with **Atomic Design** (Brad Frost, 2013) and the **Single Responsibility Principle** from *Clean Architecture* (Robert C. Martin, 2017). The key ARIA departure is that "atomic" is formalized as a machine-verifiable manifest contract rather than a design guideline, making it enforceable by tooling rather than code review.
