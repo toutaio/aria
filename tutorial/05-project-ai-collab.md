@@ -96,11 +96,11 @@ npm run bundle:dev
 ```
 
 ```
-Temporarily promoted 9 EXPERIMENTAL manifest(s).
+ℹ️  bundle:dev: temporarily promoting 9 EXPERIMENTAL manifest(s) to satisfy the bundler...
 Bundle written to ./src/.aria/manifest-bundle.json
   9 STABLE manifests
   bundle_version: sha256:...
-Reverted 9 manifest(s) back to EXPERIMENTAL.
+✓ Reverted — all 9 manifest(s) are back to EXPERIMENTAL on disk.
 ```
 
 When you are ready to permanently promote one or more manifests — because they've been tested and depended upon — use the interactive promote script:
@@ -120,42 +120,43 @@ Enter numbers to promote (comma-separated), 'all', or 'none':
 > 1,2
 ```
 
-For now, use `npm run bundle:dev` throughout this tutorial. The output file `src/.aria/manifest-bundle.json` contains:
+For now, use `npm run bundle:dev` throughout this tutorial. The output file `src/.aria/manifest-bundle.json` is a **signed manifest registry** — a snapshot of every ARU's identity, layer, and version at bundle time:
 
 ```json
 {
-  "nodes": [
-    { "id": "url.types", "layer": "L0", "stability": "EXPERIMENTAL" },
-    { "id": "url.shortcode.validate.format", "layer": "L1", "stability": "EXPERIMENTAL" },
-    { "id": "url.shortcode.generate.hash", "layer": "L1", "stability": "EXPERIMENTAL" },
-    { "id": "url.link.create.fromOriginal", "layer": "L2", "stability": "EXPERIMENTAL" },
-    { "id": "url.store.persist.link", "layer": "L3", "stability": "EXPERIMENTAL" },
-    { "id": "url.store.execute.shortCode", "layer": "L3", "stability": "EXPERIMENTAL" },
-    { "id": "url.analytics.emit.clickEvent", "layer": "L3", "stability": "EXPERIMENTAL" },
-    { "id": "url.audit.emit.shortenEvent", "layer": "L3", "stability": "EXPERIMENTAL" },
-    { "id": "url.pipeline.orchestrate.shorten", "layer": "L4", "stability": "EXPERIMENTAL" },
-    { "id": "url.domain.expose.api", "layer": "L5", "stability": "EXPERIMENTAL" }
-  ],
-  "edges": [
-    { "from": "url.shortcode.validate.format", "to": "url.link.create.fromOriginal", "pattern": "VALIDATE" },
-    { "from": "url.shortcode.generate.hash", "to": "url.link.create.fromOriginal", "pattern": "PIPE" },
-    { "from": "url.link.create.fromOriginal", "to": "url.store.persist.link", "pattern": "PIPE" },
-    { "from": "url.pipeline.orchestrate.shorten", "to": "url.analytics.emit.clickEvent", "pattern": "FORK" },
-    { "from": "url.pipeline.orchestrate.shorten", "to": "url.store.persist.link", "pattern": "CIRCUIT_BREAKER" },
-    { "from": "url.pipeline.orchestrate.shorten", "to": "url.audit.emit.shortenEvent", "pattern": "OBSERVE" },
-    { "from": "url.domain.expose.api", "to": "url.pipeline.orchestrate.shorten", "pattern": "ROUTE" },
-    { "from": "url.domain.expose.api", "to": "url.store.execute.shortCode", "pattern": "ROUTE" }
+  "bundle_version": "sha256:41fd009904a9c70200ba6e9e5b950e2359cb4a5d6c4e261c4aa7ec6c71828656",
+  "domain_filter": null,
+  "manifest_count": 9,
+  "signatures": [
+    {
+      "file": "./src/url/types.manifest.yaml",
+      "id": "url.types",
+      "layer": "L0",
+      "lifecycle_phase": "Stable",
+      "manifest_hash": "...",
+      "schema_version": "1.0",
+      "stability": "Stable",
+      "version": "1.0.0"
+    },
+    {
+      "file": "./src/url/shortcode/validate.format.manifest.yaml",
+      "id": "url.shortcode.validate.format",
+      "layer": "L1",
+      "lifecycle_phase": "Stable",
+      "manifest_hash": "...",
+      "schema_version": "1.0",
+      "stability": "Stable",
+      "version": "1.0.0"
+    }
   ]
 }
 ```
 
-This graph is the complete map of the domain. Every node is an ARU with a known layer, stability, and context budget. Every edge is a declared, named relationship — not an inferred one discovered by tracing imports at runtime.
+> **Note:** The bundle shows `stability: Stable` because `bundle:dev` temporarily promotes manifests to pass the bundler's STABLE filter. Your source files remain `EXPERIMENTAL` — confirmed by the "Reverted N manifest(s)" message.
 
-The graph enables three things the source code alone cannot give you:
+Each entry in `signatures` records the manifest's identity, layer, schema version, and a content hash. The `bundle_version` is a hash of all signatures combined — it changes whenever any manifest changes, making it a reliable cache key for AI context loading and CI checks.
 
-1. **Change impact analysis** — before touching any ARU, ask the graph what depends on it
-2. **Precise context loading** — load only the manifests relevant to a given task, not the entire codebase
-3. **Compliance checking** — verify layer rules, naming conventions, and pattern consistency across the whole system in a single pass
+The conceptual graph — ARUs as nodes, composition patterns as edges — lives in the manifests themselves (in each `connections:` block). The bundle is the machine-readable index that makes that graph queryable.
 
 ---
 
@@ -171,28 +172,15 @@ Output:
 
 ```
 Impact analysis for: url.store.persist.link
+Total transitive dependents: 1
 
-Direct dependents (1):
-  → url.pipeline.orchestrate.shorten  [L4] via CIRCUIT_BREAKER + PIPE
-
-Transitive dependents (1):
-  → url.domain.expose.api             [L5] via ROUTE
-
-Affected context budget: 1,850 tokens
-Suggested context window for AI agent:
-  - url.store.persist.link.manifest.yaml           (to_modify: 350)
-  - url.pipeline.orchestrate.shorten.manifest.yaml  (to_use: 120)
-  - url.domain.expose.api.manifest.yaml             (to_use: 150)
-  Total: 620 tokens minimum / 1,850 tokens full context
+  L4 (1 ARUs):
+    - url.pipeline.orchestrate.shorten
 ```
 
-This output tells you three things:
+This output tells you that changing `persist.link` directly affects the L4 orchestrator — everything else flows from there. Before touching any ARU, run impact first to understand the blast radius.
 
-1. **Changing `persist.link` directly affects the L4 orchestrator** — the orchestrator depends on it via both PIPE and CIRCUIT_BREAKER
-2. **Transitively, the L5 API boundary is affected** — because the orchestrator is what the API boundary routes to
-3. **The minimum context to load for an AI agent is 620 tokens** — just the three manifests, not the full implementation files
-
-The `to_use` budget means "how many tokens an AI agent needs to *read and understand* this ARU". The `to_modify` budget means "how many tokens it needs if it's going to *change* this ARU". The distinction is important for context window management at scale.
+> **Note:** Impact analysis reads from the bundle. Run `npm run bundle:dev` to refresh it before running `aria-build impact`.
 
 ---
 
