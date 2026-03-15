@@ -55,7 +55,8 @@ The tutorial is structured as a sequence of chapters, but it's designed so you c
 - **Chapters 0–1** (Introduction + Concepts) cover the "why" and "what" of ARIA. If you prefer learning by doing, skim Chapter 1 and come back to it as a reference when questions arise.
 - **Chapter 2** (Setup) gets your environment ready. Don't skip this.
 - **Chapters 3–5** (Projects) are the hands-on part. Each one builds on the previous, but each also has a clear entry point described at the top.
-- **Chapter 6** (Conclusion) points you toward the full documentation and advanced topics.
+- **Chapter 6** (Running the Application) starts the server, makes real HTTP requests, and explains what to replace to use a real database.
+- **Chapter 7** (Conclusion) points you toward the full documentation and advanced topics.
 
 If you're using this as a reference while working on an existing project, **Chapter 1** (Core Concepts) and the manifest examples in **Chapter 3** are the most useful standalone sections.
 
@@ -69,7 +70,8 @@ If you're using this as a reference while working on an existing project, **Chap
 | 3 | [03-project-starter.md](03-project-starter.md) | Project 1 — URL Shortener core (L0–L3) |
 | 4 | [04-project-advanced.md](04-project-advanced.md) | Project 2 — Analytics and orchestration (L4) |
 | 5 | [05-project-ai-collab.md](05-project-ai-collab.md) | Project 3 — L5 boundaries and human-AI collaboration |
-| 6 | [06-conclusion.md](06-conclusion.md) | Conclusion and further reading |
+| 6 | [06-running.md](06-running.md) | Running the application |
+| 7 | [07-conclusion.md](07-conclusion.md) | Conclusion and further reading |
 
 ---
 **[Back to index](00-introduction.md)** | **[Next: Core Concepts →](01-concepts.md)**

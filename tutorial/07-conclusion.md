@@ -25,20 +25,20 @@ Every ARU built across all three chapters:
 | url.shortcode.generate.hash | L1 | generate | PIPE | NONE | Ch. 3 |
 | url.link.create.fromOriginal | L2 | create | PIPE | NONE | Ch. 3 |
 | url.store.persist.link | L3 | persist | PIPE, CIRCUIT_BREAKER | WRITE | Ch. 3 |
-| url.store.resolve.shortCode | L3 | resolve | — | READ | Ch. 3 |
-| url.analytics.emit.clickEvent | L3 | emit | FORK | EVENT | Ch. 4 |
-| url.audit.emit.shortenEvent | L3 | emit | OBSERVE | EVENT | Ch. 4 |
-| url.pipeline.orchestrate.shorten | L4 | orchestrate | PIPE, FORK, CIRCUIT_BREAKER, OBSERVE | EVENT | Ch. 4 |
+| url.store.execute.shortCode | L3 | execute | — | READ | Ch. 3 |
+| url.analytics.emit.clickEvent | L3 | emit | FORK | EXTERNAL | Ch. 4 |
+| url.audit.emit.shortenEvent | L3 | emit | OBSERVE | EXTERNAL | Ch. 4 |
+| url.pipeline.orchestrate.shorten | L4 | orchestrate | PIPE, FORK, CIRCUIT_BREAKER, OBSERVE | EXTERNAL | Ch. 4 |
 | url.import.validate.urls | L1 | validate | PARALLEL_JOIN | NONE | Ch. 5 |
 | url.import.execute.batch | L3 | execute | SAGA | WRITE | Ch. 5 |
-| url.domain.expose.api | L5 | expose | ROUTE | EVENT | Ch. 5 |
+| url.domain.expose.api | L5 | expose | ROUTE | EXTERNAL | Ch. 5 |
 
 A few things worth noticing in this table:
 
 - **The verb column is never ambiguous** — each verb tells you exactly what layer the ARU lives on and what kind of operation it performs
 - **Side effects only appear at L3 and above** — L0, L1, and L2 are all `NONE`; this is not a coincidence, it's a design constraint enforced by the framework
 - **The same ARU can participate in multiple patterns** — `url.store.persist.link` appears as both PIPE and CIRCUIT_BREAKER because two different callers declare different relationships with it
-- **L5 inherits side effects from its dependencies** — `expose.api` is `EVENT` because HTTP responses are themselves observable effects, even though the actual data mutation happens in L3
+- **L5 inherits side effects from its dependencies** — `expose.api` is `EXTERNAL` because HTTP responses are themselves observable effects, even though the actual data mutation happens in L3
 
 ---
 
@@ -155,4 +155,4 @@ Together, the manifests and the graph form a representation of the system that i
 
 ---
 
-**[← AI Collaboration](05-project-ai-collab.md)** | **[Back to index](00-introduction.md)**
+**[← Running the Application](06-running.md)** | **[Back to index](00-introduction.md)**

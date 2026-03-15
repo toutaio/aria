@@ -576,4 +576,4 @@ The concepts introduced in this chapter are covered in depth in the documentatio
 
 ---
 
-**[← Advanced Project](04-project-advanced.md)** | **[Back to index](00-introduction.md)** | **[Next: Conclusion →](06-conclusion.md)**
+**[← Advanced Project](04-project-advanced.md)** | **[Back to index](00-introduction.md)** | **[Next: Running the Application →](06-running.md)**
