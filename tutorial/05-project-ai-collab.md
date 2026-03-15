@@ -62,6 +62,19 @@ manifest:
     to_modify: 500
     to_extend: 700
     to_replace: 400
+  behavioral_contract:
+    max_retries: 0
+    retry_strategy: none
+    timeout: 5000ms
+  health_contract:
+    sla_latency_p99: 2000ms
+    sla_availability: "99.9%"
+  diagnostic_surface:
+    failure_indicators:
+      - symptom: "HttpError.NOT_FOUND returned"
+        check: "shortCode not in store; verify execute.shortCode ARU"
+      - symptom: "HttpError.INTERNAL returned"
+        check: "orchestrate.shorten pipeline failure; check store and analytics ARUs"
   test_contract:
     scenarios:
       - scenario: "POST /shorten with valid URL returns 200 with shortCode"
@@ -82,6 +95,8 @@ manifest:
 ```
 
 The `ROUTE` pattern means: given the incoming request, exactly one branch fires — either the shorten pipeline (`POST /shorten`) or the resolve lookup (`GET /:shortCode`). All declared branches must be handled; you cannot have an implicit catch-all at the L5 boundary.
+
+Create this file now — it's needed for the impact analysis and bundling steps later in this chapter.
 
 ---
 
@@ -499,20 +514,15 @@ Output:
 
 ```
 Impact analysis for: url.pipeline.orchestrate.shorten
+Total transitive dependents: 1
 
-Direct dependents (1):
-  → url.domain.expose.api  [L5] via ROUTE
-
-Suggested context window for AI agent (to_modify scope):
-  - url.pipeline.orchestrate.shorten.manifest.yaml   (400 tokens)
-  - url.domain.expose.api.manifest.yaml              (150 tokens)
-  - url.store.persist.link.manifest.yaml             (100 tokens)
-  Total: 650 tokens
+  L5 (1 ARUs):
+    - url.domain.expose.api
 ```
 
-**Step 2**: Load only those three manifests — plus their implementation files if the agent needs to write code — into the agent's context window.
+**Step 2**: Load `url.pipeline.orchestrate.shorten.manifest.yaml` and `url.domain.expose.api.manifest.yaml` — plus their implementation files if the agent needs to write code — into the agent's context window.
 
-This is 650 tokens of manifests instead of however many thousands of tokens the full codebase contains. The agent gets precisely the context it needs to make a correct, scoped change.
+This is a handful of manifests instead of thousands of tokens of full codebase. The agent gets precisely the context it needs to make a correct, scoped change.
 
 **Step 3**: Give the agent a scoped task with explicit constraints.
 
