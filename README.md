@@ -55,7 +55,6 @@ ai-architecture/
 │   │   └── aria-build-bin-*/    # Platform-specific binary packages
 │   └── aria-build-prototype/    # Node.js prototype CLI (Phase 1)
 │
-└── openspec/                    # OpenSpec change management
 ```
 
 ---
