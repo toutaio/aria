@@ -253,6 +253,25 @@ The pattern declaration IS the design. Implementation is the execution of the de
 
 ---
 
+## Planned Patterns (Not Yet Implemented)
+
+The following 8 patterns are on the ARIA roadmap. They follow the same declaration rules as implemented patterns — manifest `connections:` blocks may reference them, but the CLI will emit a warning and `aria-build generate` will not produce TypeScript wrappers until they are implemented.
+
+> 🔮 **Planned** — not yet available in `aria-build generate` or `aria-lsp`.
+
+| Pattern | Description | Shape |
+|---|---|---|
+| `PARALLEL_FORK` | Concurrent fan-out with independent result collection | `A → [B*, C*]` (concurrent) |
+| `SCATTER_GATHER` | Scatter inputs to workers → gather partial results | `A → [Worker*] → Aggregate` |
+| `COMPENSATING_TRANSACTION` | Forward + typed compensation ARU pair | `A → (A⁺, A⁻)` |
+| `STREAMING_PIPELINE` | Lazy/infinite chunk-by-chunk transformation | `AsyncIterable<A> → AsyncIterable<B>` |
+| `CACHE_ASIDE` | Read-through cache with injected CacheStore adapter | `A → B (cache hit) \| (miss → fetch → cache → B)` |
+| `BULKHEAD` | Concurrency isolation — bounded pool with backpressure | `A → B (pooled, bounded)` |
+| `PRIORITY_QUEUE` | Priority-envelope dispatch — highest-priority processes first | `A[priority] → B` |
+| `EVENT_SOURCING` | Command → immutable event log → aggregate projection | `Command → Events* → Aggregate` |
+
+---
+
 ## Influences
 
 The pattern vocabulary draws directly from **Enterprise Integration Patterns** (Gregor Hohpe & Bobby Woolf, Addison-Wesley, 2003), which catalogued messaging and integration topologies (pipes, filters, routers, aggregators). ARIA adapts their naming (PIPE, ROUTE, FORK/JOIN) and adds patterns for distributed systems (SAGA, CIRCUIT_BREAKER, PARALLEL_JOIN) drawn from reactive and microservices literature. The critical ARIA addition is that every pattern instance is a **typed, declared edge** in the semantic graph — not an implementation detail discovered by reading code.

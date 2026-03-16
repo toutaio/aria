@@ -1,0 +1,164 @@
+<!-- ARIA Skills version: 1.0 -->
+# ARIA Framework Rules — Cline (VS Code)
+
+This repository uses **ARIA (Atomic Responsibility Interface Architecture)**. Apply these rules when generating, editing, or reviewing any code in this project.
+
+> Primer: `skills/aria-primer.md` · Docs: `docs/` · Schema: `aria/schema/aria-manifest.schema.json`
+
+---
+
+## Layers — WHERE code lives
+
+Every ARU belongs to exactly one layer. Higher layers may only depend on lower ones.
+
+| Layer | Name      | Responsibility                       | Deps   |
+|-------|-----------|--------------------------------------|--------|
+| L0    | Primitive | Types, constants, pure functions     | None   |
+| L1    | Atom      | Single-responsibility operations     | L0     |
+| L2    | Molecule  | Composes atoms, one sub-purpose      | L0–L1  |
+| L3    | Organism  | Business rules and decisions         | L0–L2  |
+| L4    | System    | Orchestration only                   | L0–L3  |
+| L5    | Domain    | Bounded context / integration surface| L0–L4  |
+
+Critical rules:
+- **L0**: No side effects. No imports outside L0.
+- **L3**: Business logic lives here. Infrastructure calls go through L1/L2 adapters.
+- **L4**: Pure orchestration. Zero business logic.
+- Same-layer coupling only through explicitly declared interfaces.
+
+---
+
+## Naming — Semantic Address
+
+```
+[domain].[subdomain].[verb].[entity]   (all kebab-case)
+```
+
+**Verb vocabulary is layer-locked** — using the wrong verb signals an architecture violation:
+
+| Layer | Verbs |
+|-------|-------|
+| L1    | `validate` `transform` `compute` `generate` `encode` `decode` `hash` `compare` |
+| L2    | `create` `build` `prepare` `assemble` `resolve` |
+| L3    | `execute` `apply` `process` `enforce` `emit` `authorize` `persist` |
+| L4    | `orchestrate` `coordinate` `pipeline` `route` |
+| L5    | `expose` `integrate` `guard` `translate` |
+
+Examples:
+```
+auth.token.validate.signature        → L1 Atom
+auth.session.create.fromToken        → L2 Molecule
+user.registration.execute.workflow   → L3 Organism
+billing.payment.orchestrate.pipeline → L4 System
+notification.domain.expose.api       → L5 Domain
+```
+
+File names mirror the address:
+```
+auth.token.validate.signature.manifest.yaml
+auth.token.validate.signature.ts
+auth.token.validate.signature.test.ts
+```
+
+Never use: `utils`, `helpers`, `manager`, `service`, `handler` without a semantic address.
+
+---
+
+## Manifests — required for every ARU
+
+Co-locate `<address>.manifest.yaml` with every implementation file:
+
+```yaml
+manifest:
+  id: "auth.token.validate.signature"
+  version: "1.0.0"
+  layer: L1
+  identity:
+    purpose: "validates JWT token signature and expiry"
+    domain: "auth"
+    subdomain: "token"
+    verb: "validate"
+    entity: "signature"
+  contract:
+    input:
+      type: "TokenString"
+      constraints: ["non-empty string", "matches JWT format"]
+    output:
+      success: "ValidatedToken"
+      failure: "AuthError { code: EXPIRED | INVALID_SIGNATURE | MALFORMED }"
+    side_effects: NONE
+    idempotent: true
+    deterministic: true
+  dependencies:
+    - id: "crypto.jwt.decode"
+      layer: L1
+  context_budget:
+    to_use: 120
+    to_modify: 340
+    to_extend: 580
+    to_replace: 200
+  test_contract:
+    - scenario: "valid unexpired token returns ValidatedToken"
+    - scenario: "expired token returns AuthError EXPIRED"
+    - scenario: "tampered signature returns AuthError INVALID_SIGNATURE"
+  stability: EXPERIMENTAL
+  connections:
+    - pattern: PIPE
+      target: "auth.session.create.fromToken"
+```
+
+---
+
+## Composition Patterns — declare every connection
+
+| # | Pattern         | Shape                     | Use when                                        |
+|---|-----------------|---------------------------|-------------------------------------------------|
+| 1 | PIPE            | `A → B`                   | Output of A feeds directly into B               |
+| 2 | FORK            | `A → [B, C]`              | Same value to multiple ARUs independently       |
+| 3 | JOIN            | `[A, B] → C`              | Multiple outputs merged into typed struct       |
+| 4 | GATE            | `A → B \| ∅`              | Conditional pass-or-discard                     |
+| 5 | ROUTE           | `A → B \| C`              | All branches declared, exactly one fires        |
+| 6 | LOOP            | `A →[cond]→ A`            | Bounded iteration, must declare max count       |
+| 7 | OBSERVE         | `A → (A, Event)`          | Side-channel event, main flow unchanged         |
+| 8 | TRANSFORM       | `A → A'`                  | Same domain, different shape                    |
+| 9 | VALIDATE        | `A → A' \| Error`         | Typed contract enforcement                      |
+|10 | CACHE           | `A → A` (memo)            | Transparent memoization                         |
+|11 | STREAM          | `A → B*`                  | Element-by-element sequence processing          |
+|12 | SAGA            | `[A→B→C] + compensations` | Distributed tx with typed rollback              |
+|13 | CIRCUIT_BREAKER | `A → B (stateful)`        | Failure-threshold circuit opening               |
+|14 | PARALLEL_JOIN   | `[A,B,C] → D (timeout)`   | Concurrent fan-out with timeout budget          |
+
+---
+
+## CLI Commands
+
+```bash
+aria-build check ./src                             # validate all manifests
+aria-build check ./src --compliance-level 3        # enforce layer dependency rules
+aria-build impact auth.identity.authenticate.user  # change impact analysis
+aria-build bundle ./src                            # build semantic graph snapshot
+aria-build generate ./src                          # generate TypeScript wrappers
+```
+
+| Compliance Level | What Is Checked |
+|-----------------|-----------------|
+| 0 | JSON Schema validation only |
+| 1 | + Manifest presence |
+| 2 | + Naming conventions |
+| 3 | + Layer dependency rules |
+| 4 | + Bundle freshness |
+| 5 | All checks (default) |
+
+---
+
+## Do ✅ / Don't ❌
+
+| ✅ Do | ❌ Don't |
+|-------|---------|
+| Assign every new ARU a layer (L0–L5) | Write implementation without a manifest |
+| Use `domain.subdomain.verb.entity` naming | Use `utils`, `helpers`, `manager`, `service` |
+| Declare every connection as a named pattern | Leave inter-ARU connections undeclared |
+| Keep L4 Systems free of business logic | Add business conditions to L4 orchestrators |
+| Keep L3 Organisms free of infrastructure | Call DB/HTTP directly from L3 |
+| Start new ARUs at `stability: EXPERIMENTAL` | Use `FROZEN` on first release |
+| Run `aria-build check ./src` before commit | Commit without manifest validation |

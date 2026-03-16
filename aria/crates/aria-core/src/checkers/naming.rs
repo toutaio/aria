@@ -186,15 +186,17 @@ pub fn check_naming_slice(manifests: &[(&Path, &Manifest)]) -> CheckResult {
                             ));
                         }
 
-                        // Tier 1 drift: stored inferred != recomputed
-                        if m.layer.inferred != inferred_layer {
-                            diagnostics.push(Diagnostic::warn(
-                                *file, 0, 0,
-                                format!(
-                                    "Inferred layer mismatch: stored inferred={}, recomputed={} for address '{}'",
-                                    m.layer.inferred, inferred_layer, id
-                                ),
-                            ));
+                        // Tier 1 drift: stored inferred != recomputed (only when inferred is present)
+                        if let Some(stored_inferred) = &m.layer.inferred {
+                            if stored_inferred != &inferred_layer {
+                                diagnostics.push(Diagnostic::warn(
+                                    *file, 0, 0,
+                                    format!(
+                                        "Inferred layer mismatch: stored inferred={}, recomputed={} for address '{}'",
+                                        stored_inferred, inferred_layer, id
+                                    ),
+                                ));
+                            }
                         }
                     }
                 }

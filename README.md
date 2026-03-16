@@ -75,41 +75,53 @@ cargo install --path aria/crates/aria-build
 ```yaml
 # src/auth/identity/auth.identity.authenticate.user.manifest.yaml
 
-identity:
-  address: auth.identity.authenticate.user
-  layer: 1
-  stability: stable
+manifest:
+  id: "auth.identity.authenticate.user"
+  version: "1.0.0"
+  layer: L3
 
-contract:
-  input_schema:
-    type: AuthRequest
-  output_schema:
-    type: AuthToken
-  error_types:
-    - AuthError.INVALID_CREDENTIALS
-    - AuthError.ACCOUNT_LOCKED
+  identity:
+    purpose: "authenticates a user and issues a session token"
+    domain: "auth"
+    subdomain: "identity"
+    verb: "authenticate"
+    entity: "user"
 
-composition:
-  pattern: PIPE
-  input_type: AuthRequest
-  output_type: AuthToken
-  error_types:
-    - AuthError.INVALID_CREDENTIALS
-    - AuthError.ACCOUNT_LOCKED
+  contract:
+    input:
+      type: "AuthRequest"
+      constraints:
+        - "email must be valid format"
+        - "password non-empty"
+    output:
+      success: "AuthToken"
+      failure: "AuthError { code: INVALID_CREDENTIALS | ACCOUNT_LOCKED }"
+    side_effects: WRITE
+    idempotent: false
+    deterministic: false
 
-layer:
-  declared: 1
   dependencies:
-    - auth.token.generate.jwt
-    - auth.credential.verify.password
+    - id: "auth.token.generate.jwt"
+      layer: L2
+    - id: "auth.credential.verify.password"
+      layer: L1
 
-budget:
-  max_response_ms: 200
-  max_memory_mb: 32
+  context_budget:
+    to_use: 140
+    to_modify: 360
+    to_extend: 620
+    to_replace: 220
 
-tests:
-  unit_test_file: auth.identity.authenticate.user.test.ts
-  coverage_threshold: 80
+  test_contract:
+    - scenario: "valid credentials returns AuthToken"
+    - scenario: "wrong password returns AuthError INVALID_CREDENTIALS"
+    - scenario: "locked account returns AuthError ACCOUNT_LOCKED"
+
+  stability: EXPERIMENTAL
+
+  connections:
+    - pattern: PIPE
+      target: "auth.session.create.fromToken"
 ```
 
 ### 3. Validate all manifests
@@ -146,9 +158,9 @@ aria-build generate ./src
 | Level | Checks Applied |
 |---|---|
 | `0` | JSON Schema validation only |
-| `1` | + Naming conventions (verb vocabulary, address format, error type prefix) |
-| `2` | + Semantic graph (cycle detection, cross-domain dependency rules, type compatibility) |
-| `3` | + Composition codegen freshness (stale `*.generated.ts` detection via manifest hash) |
+| `1` | + Manifest presence (every source file has a co-located `.manifest.yaml`) |
+| `2` | + Naming enforcement (verb vocabulary, address format, layer-verb alignment) |
+| `3` | + Layer dependency rules (no upward imports, no cycles) |
 | `4` | + Bundle freshness (`aria-build bundle` output is up-to-date) |
 | `5` | All checks (default) |
 
@@ -180,18 +192,16 @@ A full manifest can declare up to 14 sections. Required sections depend on the l
 |---|---|---|---|
 | `identity` | ✓ | ✓ | ✓ |
 | `contract` | ✓ | ✓ | ✓ |
-| `composition` | ✓ | ✓ | ✓ |
+| `layer` | ✓ | ✓ | ✓ |
+| `stability` | ✓ | ✓ | ✓ |
 | `dependencies` | — | ✓ | ✓ |
-| `budget` | — | ✓ | ✓ |
-| `tests` | — | ✓ | ✓ |
+| `context_budget` | — | ✓ | ✓ |
+| `test_contract` | — | ✓ | ✓ |
 | `behavioral_contract` | — | — | ✓ |
 | `health_contract` | — | — | ✓ |
-| `diagnostic_contract` | — | — | ✓ |
-| `layer` | opt | opt | opt |
-| `stability` | opt | opt | opt |
-| `migration` | opt | opt | opt |
-| `observability` | opt | opt | opt |
-| `documentation` | opt | opt | opt |
+| `diagnostic_surface` | — | — | ✓ |
+| `connections` | opt | opt | opt |
+| `composition` | opt | opt | opt |
 
 See [doc 20 — Unified Manifest Schema](docs/20-manifest-schema.md) for full field reference.
 
@@ -199,18 +209,33 @@ See [doc 20 — Unified Manifest Schema](docs/20-manifest-schema.md) for full fi
 
 ## Composition Patterns
 
-ARIA defines 14 composition patterns covering all common distributed system concerns:
+ARIA defines 14 implemented composition patterns covering all common distributed system concerns:
 
 | Pattern | Use Case |
 |---|---|
-| `PIPE` | Sequential transform: `T → Result<U, E>` |
-| `FORK` | Fan-out to named branches |
-| `JOIN` | Fan-in from named branches |
+| `PIPE` | Sequential transform: `A → B` |
+| `FORK` | Fan-out: same value to multiple ARUs independently |
+| `JOIN` | Fan-in: merge multiple outputs into one typed struct |
+| `GATE` | Conditional pass-or-discard: `A → B \| ∅` |
+| `ROUTE` | Conditional branch — all paths declared, exactly one fires |
+| `LOOP` | Bounded iteration with max count declared |
+| `OBSERVE` | Side-channel event without mutating main flow |
+| `TRANSFORM` | Shape change within the same semantic domain |
+| `VALIDATE` | Contract enforcement with typed error |
+| `CACHE` | Transparent memoization of expensive pure computation |
+| `STREAM` | Element-by-element lazy/infinite sequence processing |
+| `SAGA` | Distributed transaction with typed compensation steps |
+| `CIRCUIT_BREAKER` | Stateful failure detection — opens at failure threshold |
+| `PARALLEL_JOIN` | Concurrent fan-out with coordinated collection and timeout |
+
+### Planned Patterns (Not Yet Implemented)
+
+The following 8 patterns are part of the ARIA roadmap and will be added in future releases:
+
+| Pattern | Description |
+|---|---|
 | `PARALLEL_FORK` | Concurrent fan-out: `T → Array<Result<U, E>>` |
-| `PARALLEL_JOIN` | Concurrent fan-in with partial success: `ThreeTrack<T, P, E>` |
 | `SCATTER_GATHER` | Scatter inputs → gather results |
-| `CIRCUIT_BREAKER` | Failure isolation with open/half-open/closed states |
-| `SAGA` | Distributed transaction with compensation steps |
 | `COMPENSATING_TRANSACTION` | Forward + compensation ARU pair |
 | `STREAMING_PIPELINE` | `AsyncIterable<Chunk> → AsyncIterable<Result<U, E>>` |
 | `CACHE_ASIDE` | Read-through cache with injected CacheStore |
@@ -261,7 +286,7 @@ const err: RailError<AuthError> = wrapWithProvenance(
   ctx
 );
 
-// Three-track for PARALLEL_JOIN
+// Three-track for PARALLEL_JOIN (concurrent fan-out with timeout budget)
 const joined: ThreeTrack<Output, Partial<Output>, Error> = { _tag: 'PARTIAL_SUCCESS', ... };
 
 // Trace context propagated through composition chains

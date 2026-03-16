@@ -374,7 +374,7 @@ If step 3 fails, the SAGA compensates by running step 2's compensation (deleting
 
 ### Patterns Not Demonstrated in This Tutorial
 
-The following patterns — JOIN, LOOP, OBSERVE, TRANSFORM, CACHE, STREAM, PARALLEL_JOIN — are part of the ARIA specification and follow the same rules as the patterns above. They are not used in the URL shortener project, but their full specifications are available in `docs/05-composition-patterns.md`. Each pattern has a generated TypeScript wrapper available via `aria-build generate`.
+The following patterns — JOIN, LOOP, TRANSFORM, CACHE, STREAM, PARALLEL_JOIN — are part of the ARIA specification and follow the same rules as the patterns above. They are not used in the URL shortener project, but their full specifications are available in `docs/03-composition-patterns.md`. Each pattern has a generated TypeScript wrapper available via `aria-build generate`.
 
 ---
 

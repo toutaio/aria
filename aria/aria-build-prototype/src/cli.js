@@ -61,8 +61,8 @@ program
       }
     }
 
-    // Level 1: Naming enforcement
-    if (complianceLevel >= COMPLIANCE_LEVELS.NAMING_ENFORCEMENT) {
+    // Level 1: Manifest presence (stub — naming checker used as proxy until presence checker is wired)
+    if (complianceLevel >= COMPLIANCE_LEVELS.MANIFEST_PRESENCE) {
       const namingDiags = checkNaming(manifests);
       allDiagnostics.push(...namingDiags);
     }

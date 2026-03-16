@@ -88,10 +88,32 @@ pub struct Identity {
 }
 
 /// Section 2: Layer
+/// Supports both shorthand (`layer: "L1"`) and full object form (`layer: { declared, inferred }`).
+/// When the shorthand is used, `inferred` is `None` until the layer-inference pass fills it.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(from = "LayerFieldRaw")]
 pub struct LayerSection {
     pub declared: Layer,
-    pub inferred: Layer,
+    pub inferred: Option<Layer>,
+}
+
+/// Internal helper for `serde(untagged)` deserialization of the layer field.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+enum LayerFieldRaw {
+    /// Shorthand: `layer: "L1"`
+    Shorthand(Layer),
+    /// Full form: `layer: { declared: "L1", inferred: "L1" }`
+    Full { declared: Layer, inferred: Option<Layer> },
+}
+
+impl From<LayerFieldRaw> for LayerSection {
+    fn from(raw: LayerFieldRaw) -> Self {
+        match raw {
+            LayerFieldRaw::Shorthand(layer) => LayerSection { declared: layer, inferred: None },
+            LayerFieldRaw::Full { declared, inferred } => LayerSection { declared, inferred },
+        }
+    }
 }
 
 /// Section 3: Contract

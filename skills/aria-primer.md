@@ -120,7 +120,7 @@ manifest:
     output:
       success: "ValidatedToken"
       failure: "AuthError { code: EXPIRED | INVALID_SIGNATURE | MALFORMED }"
-    side_effects: NONE          # or [READ_DB, WRITE_DB, EMIT_EVENT, CALL_EXTERNAL]
+    side_effects: NONE          # or READ | WRITE | EXTERNAL
     idempotent: true
     deterministic: true
 
@@ -217,7 +217,8 @@ aria-build generate ./src
 ### Compliance Levels
 | Level | What Is Checked |
 |-------|-----------------|
-| 1 | Manifest presence (every ARU has a manifest) |
+| 0 | JSON Schema validation only |
+| 1 | + Manifest presence (every ARU has a manifest) |
 | 2 | + Naming convention compliance |
 | 3 | + Layer dependency rule enforcement |
 | 4 | + Bundle freshness |

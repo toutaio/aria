@@ -408,7 +408,12 @@
           "description": "Which version of the ARIA manifest schema this manifest targets. Minor bumps (1.x) are backwards-compatible. Major bumps require aria-build migrate."
         },
         "identity": { "$ref": "#/definitions/identitySection" },
-        "layer": { "$ref": "#/definitions/layerSection" },
+        "layer": {
+          "oneOf": [
+            { "$ref": "#/definitions/layerEnum" },
+            { "$ref": "#/definitions/layerSection" }
+          ]
+        },
         "contract": { "$ref": "#/definitions/contractSection" },
         "type_state": { "$ref": "#/definitions/typeStateSection" },
         "dependencies": {
@@ -416,6 +421,11 @@
           "items": { "$ref": "#/definitions/dependencyItem" }
         },
         "composition": { "$ref": "#/definitions/compositionSection" },
+        "connections": {
+          "type": "array",
+          "description": "Declared inter-ARU composition edges. Canonical form for human and AI-authored manifests.",
+          "items": { "$ref": "#/definitions/compositionSection" }
+        },
         "saga_participant": { "$ref": "#/definitions/sagaParticipantSection" },
         "context_budget": { "$ref": "#/definitions/contextBudgetSection" },
         "test_contract": { "$ref": "#/definitions/testContractSection" },
@@ -434,8 +444,13 @@
             "type": "object",
             "properties": {
               "layer": {
-                "type": "object",
-                "properties": { "declared": { "type": "string", "enum": ["L1", "L2", "L3", "L4", "L5"] } }
+                "anyOf": [
+                  { "type": "string", "enum": ["L1", "L2", "L3", "L4", "L5"] },
+                  {
+                    "type": "object",
+                    "properties": { "declared": { "type": "string", "enum": ["L1", "L2", "L3", "L4", "L5"] } }
+                  }
+                ]
               }
             }
           },
@@ -449,8 +464,13 @@
             "type": "object",
             "properties": {
               "layer": {
-                "type": "object",
-                "properties": { "declared": { "type": "string", "enum": ["L3", "L4", "L5"] } }
+                "anyOf": [
+                  { "type": "string", "enum": ["L3", "L4", "L5"] },
+                  {
+                    "type": "object",
+                    "properties": { "declared": { "type": "string", "enum": ["L3", "L4", "L5"] } }
+                  }
+                ]
               }
             }
           },

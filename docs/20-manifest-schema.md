@@ -60,10 +60,13 @@ manifest:
   # ----------------------------------------------------------
   # SECTION 2: Layer
   # ----------------------------------------------------------
-  layer:
-    declared: L0 | L1 | L2 | L3 | L4 | L5      # [T2] approved by human at Tier 2
-    inferred: L0 | L1 | L2 | L3 | L4 | L5       # [T1] derived from verb vocabulary
-    # Build failure if declared != inferred
+  # Shorthand form (preferred for human-authored manifests):
+  layer: L0 | L1 | L2 | L3 | L4 | L5               # [T2] approved by human at Tier 2
+  # Full object form (used when inferred layer is explicitly stored):
+  # layer:
+  #   declared: L0 | L1 | L2 | L3 | L4 | L5         # [T2] approved by human at Tier 2
+  #   inferred: L0 | L1 | L2 | L3 | L4 | L5         # [T1] derived from verb vocabulary (optional)
+  #   # Build failure if declared != inferred (when inferred is set)
 
   # ----------------------------------------------------------
   # SECTION 3: Contract
@@ -99,9 +102,18 @@ manifest:
       stability: EXPERIMENTAL | STABLE | FROZEN  # [T1] from dependency's manifest
 
   # ----------------------------------------------------------
-  # SECTION 6: Composition (only for composed ARUs)
+  # SECTION 6: Connections (canonical inter-ARU composition edges)
   # ----------------------------------------------------------
-  composition:                                   # [T2] required if this ARU is a composition
+  connections:                                   # [T2] canonical array form for declared composition
+    - pattern: PIPE | FORK | JOIN | GATE | ROUTE | LOOP | OBSERVE |
+               TRANSFORM | VALIDATE | CACHE | STREAM | SAGA | CIRCUIT_BREAKER | PARALLEL_JOIN
+      target: "domain.sub.verb.entity"           # [T2] target ARU id
+      # Additional fields mirror the `composition` section below.
+
+  # ----------------------------------------------------------
+  # SECTION 7 (legacy): Composition (single object — kept for backward compatibility)
+  # ----------------------------------------------------------
+  composition:                                   # [T2] deprecated in favour of `connections` array
     pattern: PIPE | FORK | JOIN | GATE | ROUTE | LOOP | OBSERVE |
              TRANSFORM | VALIDATE | CACHE | STREAM | SAGA | CIRCUIT_BREAKER | PARALLEL_JOIN
     chain: []                                    # [T2] for PIPE: ordered ARU id list
