@@ -4,9 +4,7 @@ globs: ["**/*"]
 alwaysApply: true
 ---
 
-<!-- ARIA Skills version: 1.0 -->
-
-# ARIA Framework — Cursor Rules
+# ARIA Framework — Cursor IDE Rules
 
 This repository uses **ARIA (Atomic Responsibility Interface Architecture)**. Apply these rules to all completions and suggestions.
 
@@ -96,24 +94,32 @@ manifest:
 
 ## Composition Patterns
 
-All 14 patterns — every inter-ARU connection must use one:
+All 22 patterns — every inter-ARU connection must use one:
 
-| # | Pattern         | Shape                     | Use when                                        |
-|---|-----------------|---------------------------|-------------------------------------------------|
-| 1 | PIPE            | `A → B`                   | Output of A feeds directly into B               |
-| 2 | FORK            | `A → [B, C]`              | Same value to multiple ARUs independently       |
-| 3 | JOIN            | `[A, B] → C`              | Multiple outputs merged into typed struct       |
-| 4 | GATE            | `A → B \| ∅`              | Conditional pass-or-discard                     |
-| 5 | ROUTE           | `A → B \| C`              | All branches declared, exactly one fires        |
-| 6 | LOOP            | `A →[cond]→ A`            | Bounded iteration, must declare max count       |
-| 7 | OBSERVE         | `A → (A, Event)`          | Side-channel event, main flow unchanged         |
-| 8 | TRANSFORM       | `A → A'`                  | Same domain, different shape                    |
-| 9 | VALIDATE        | `A → A' \| Error`         | Typed contract enforcement                      |
-|10 | CACHE           | `A → A` (memo)            | Transparent memoization                         |
-|11 | STREAM          | `A → B*`                  | Element-by-element sequence processing          |
-|12 | SAGA            | `[A→B→C] + compensations` | Distributed tx with typed rollback              |
-|13 | CIRCUIT_BREAKER | `A → B (stateful)`        | Failure-threshold circuit opening               |
-|14 | PARALLEL_JOIN   | `[A,B,C] → D (timeout)`   | Concurrent fan-out with timeout budget          |
+| # | Pattern                  | Shape                     | Use when                                        |
+|---|--------------------------|---------------------------|-------------------------------------------------|
+| 1 | PIPE                     | `A → B`                   | Output of A feeds directly into B               |
+| 2 | FORK                     | `A → [B, C]`              | Same value to multiple ARUs independently       |
+| 3 | JOIN                     | `[A, B] → C`              | Multiple outputs merged into typed struct       |
+| 4 | GATE                     | `A → B \| ∅`              | Conditional pass-or-discard                     |
+| 5 | ROUTE                    | `A → B \| C`              | All branches declared, exactly one fires        |
+| 6 | LOOP                     | `A →[cond]→ A`            | Bounded iteration, must declare max count       |
+| 7 | OBSERVE                  | `A → (A, Event)`          | Side-channel event, main flow unchanged         |
+| 8 | TRANSFORM                | `A → A'`                  | Same domain, different shape                    |
+| 9 | VALIDATE                 | `A → A' \| Error`         | Typed contract enforcement                      |
+|10 | CACHE                    | `A → A` (memo)            | Transparent memoization                         |
+|11 | STREAM                   | `A → B*`                  | Element-by-element sequence processing          |
+|12 | SAGA                     | `[A→B→C] + compensations` | Distributed tx with typed rollback              |
+|13 | CIRCUIT_BREAKER          | `A → B (stateful)`        | Failure-threshold circuit opening               |
+|14 | PARALLEL_JOIN            | `[A,B,C] → D (timeout)`   | Concurrent fan-out with timeout budget          |
+|15 | PARALLEL_FORK            | `A → [B, C] (parallel)`   | Parallel independent branches, all fire         |
+|16 | SCATTER_GATHER           | `A[] → B[]`               | Scatter input elements, gather results          |
+|17 | COMPENSATING_TRANSACTION | `A → B \| rollback`       | Forward with explicit typed compensation        |
+|18 | STREAMING_PIPELINE       | `A → B*` (chunked)        | Chunk-by-chunk streaming transformation         |
+|19 | CACHE_ASIDE              | `A → B` (load-through)    | Cache miss triggers load and store              |
+|20 | BULKHEAD                 | `A → B` (pool-isolated)   | Resource pool isolation with overflow handling  |
+|21 | PRIORITY_QUEUE           | `A → B` (prioritised)     | Priority-ordered delivery to target ARU         |
+|22 | EVENT_SOURCING           | `A → B*` (events)         | Append events, project aggregate state          |
 
 ## CLI Commands
 
@@ -134,3 +140,8 @@ aria-build generate ./src                          # generate TypeScript wrapper
 - Never allow upward layer dependencies (L1 cannot import L3+)
 - Never add business logic to L4 Systems
 - Run `aria-build check ./src` before every commit
+
+## Setup for Cursor
+
+Copy this file to `.cursor/rules/aria.mdc` in your project root to activate these rules in Cursor IDE.
+You can also use the legacy `.cursorrules` file at the project root — copy the content without the YAML frontmatter.
