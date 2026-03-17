@@ -209,7 +209,7 @@
         "false_branch": { "$ref": "#/definitions/semanticAddress" },
         "input_type": { "type": "string", "minLength": 1 },
         "output_type": { "type": "string", "minLength": 1 },
-        "error_types": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "error_types": { "type": "array", "items": { "$ref": "#/definitions/errorTypePattern" } },
         "forward_aru": { "$ref": "#/definitions/semanticAddress" },
         "compensation_aru": { "$ref": "#/definitions/semanticAddress" },
         "chunk_type": { "type": "string", "minLength": 1 },

@@ -1,5 +1,5 @@
 identity:
-  address: search.index.execute.bulkIndex
+  address: search.index.execute.bulk-index
   layer: 3
 
 composition:

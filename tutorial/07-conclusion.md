@@ -86,7 +86,7 @@ Eight of the fourteen composition patterns appeared in this tutorial:
 
 **PARALLEL_JOIN** — concurrent fan-out with a timeout budget. Multiple operations run simultaneously; results are collected and merged. Supports partial results on timeout.
 
-The six patterns not demonstrated in this tutorial — **JOIN**, **GATE**, **LOOP**, **TRANSFORM**, **CACHE**, and **STREAM** — follow exactly the same declaration model. Each has a named pattern, a `target`, and an optional `config` block. The semantics differ, but the structure is consistent. Once you've read one pattern declaration in a manifest, you can read any of the others.
+The patterns not demonstrated in this tutorial — **JOIN**, **GATE**, **LOOP**, **TRANSFORM**, **CACHE**, **STREAM**, **PARALLEL_FORK**, **SCATTER_GATHER**, **COMPENSATING_TRANSACTION**, **STREAMING_PIPELINE**, **CACHE_ASIDE**, **BULKHEAD**, **PRIORITY_QUEUE**, and **EVENT_SOURCING** — follow exactly the same declaration model. Each has a named pattern, a `target`, and an optional `config` block. The semantics differ, but the structure is consistent. Once you've read one pattern declaration in a manifest, you can read any of the others.
 
 ---
 

@@ -58,9 +58,10 @@ pub enum SideEffects {
     External,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum CompositionPattern {
+    #[default]
     Pipe,
     Fork,
     Join,
@@ -167,7 +168,7 @@ pub struct Dependency {
 }
 
 /// Section 6: Composition
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Composition {
     pub pattern: CompositionPattern,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -256,6 +257,9 @@ pub struct Composition {
     /// SCATTER_GATHER: ARU that aggregates gathered results
     #[serde(skip_serializing_if = "Option::is_none")]
     pub aggregate_aru: Option<String>,
+    /// CACHE_ASIDE: time-to-live for cached entries in seconds
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ttl_seconds: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

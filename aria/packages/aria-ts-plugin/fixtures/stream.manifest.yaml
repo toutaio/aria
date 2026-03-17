@@ -1,0 +1,13 @@
+identity:
+  address: logs.pipeline.stream.events
+  layer: 3
+
+composition:
+  pattern: STREAM
+  input_type: LogEntry
+  output_type: ProcessedLog
+  error_types:
+    - LogError.PROCESSING_FAILED
+  source_aru: logs.pipeline.generate.entries
+  processor_aru: logs.pipeline.transform.entry
+  backpressure: BUFFER(500)

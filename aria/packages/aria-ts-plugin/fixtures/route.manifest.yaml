@@ -1,0 +1,14 @@
+identity:
+  address: billing.payment.route.method
+  layer: 3
+
+composition:
+  pattern: ROUTE
+  input_type: PaymentRequest
+  output_type: PaymentResult
+  error_types:
+    - PaymentError.UNKNOWN_METHOD
+  condition_aru: billing.payment.resolve.method
+  branches:
+    - billing.payment.process.card
+    - billing.payment.process.bank-transfer

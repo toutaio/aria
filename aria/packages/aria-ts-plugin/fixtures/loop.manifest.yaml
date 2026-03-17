@@ -1,0 +1,12 @@
+identity:
+  address: sync.retry.loop.backoff
+  layer: 3
+
+composition:
+  pattern: LOOP
+  input_type: RetryContext
+  output_type: RetryContext
+  error_types:
+    - SyncError.MAX_RETRIES_EXCEEDED
+  condition_aru: sync.retry.validate.should-continue
+  max_iterations: 5

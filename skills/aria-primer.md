@@ -16,7 +16,7 @@
 
 > If every component has an unambiguous contract, a precise responsibility, a known layer, a typed interface, and a predictable connection model — an AI can work with maximum precision using minimum context.
 
-Every piece of code is an **ARU (Atomic Responsibility Unit)** described by a **manifest file**. ARUs connect through one of **14 named composition patterns**. The whole system forms a **Semantic Graph** navigable without reading implementation code.
+Every piece of code is an **ARU (Atomic Responsibility Unit)** described by a **manifest file**. ARUs connect through one of **22 named composition patterns**. The whole system forms a **Semantic Graph** navigable without reading implementation code.
 
 ---
 

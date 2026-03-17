@@ -1,0 +1,11 @@
+identity:
+  address: product.catalog.cache.details
+  layer: 2
+
+composition:
+  pattern: CACHE
+  input_type: ProductId
+  output_type: ProductDetails
+  error_types:
+    - CatalogError.NOT_FOUND
+  key_aru: product.catalog.compute.cache-key

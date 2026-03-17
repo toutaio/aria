@@ -1,0 +1,11 @@
+identity:
+  address: auth.access.gate.permission
+  layer: 3
+
+composition:
+  pattern: GATE
+  input_type: UserRequest
+  output_type: UserRequest
+  error_types:
+    - AuthError.PREDICATE_FAILED
+  predicate_aru: auth.access.validate.permission

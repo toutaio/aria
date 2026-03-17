@@ -142,11 +142,98 @@ describe('EVENT_SOURCING generator', () => {
   });
 });
 
+describe('GATE generator', () => {
+  it('emits PredicateFn and pass-through type from fixture', () => {
+    const doc = loadManifest(`${fixtures}/gate.manifest.yaml`);
+    const code = generateWrapper(doc);
+    expect(code).toContain('AuthAccessGatePermissionInput = UserRequest');
+    expect(code).toContain('PredicateFn');
+    expect(code).toContain('AuthAccessGatePermissionFn');
+  });
+});
+
+describe('ROUTE generator', () => {
+  it('emits Branch union, ConditionFn, and Routes type from fixture', () => {
+    const doc = loadManifest(`${fixtures}/route.manifest.yaml`);
+    const code = generateWrapper(doc);
+    expect(code).toContain('BillingPaymentRouteMethodBranch');
+    expect(code).toContain('ConditionFn');
+    expect(code).toContain('Routes');
+    expect(code).toContain("'billing.payment.process.card'");
+  });
+});
+
+describe('LOOP generator', () => {
+  it('emits ConditionFn, BodyFn, and max_iterations comment from fixture', () => {
+    const doc = loadManifest(`${fixtures}/loop.manifest.yaml`);
+    const code = generateWrapper(doc);
+    expect(code).toContain('SyncRetryLoopBackoffInput = RetryContext');
+    expect(code).toContain('ConditionFn');
+    expect(code).toContain('BodyFn');
+    expect(code).toContain('Max iterations: 5');
+  });
+});
+
+describe('OBSERVE generator', () => {
+  it('emits ObserverFn that returns void from fixture', () => {
+    const doc = loadManifest(`${fixtures}/observe.manifest.yaml`);
+    const code = generateWrapper(doc);
+    expect(code).toContain('AuditEventObserveUserActionInput = UserAction');
+    expect(code).toContain('ObserverFn');
+    expect(code).toContain('Promise<void>');
+  });
+});
+
+describe('TRANSFORM generator', () => {
+  it('emits synchronous (no Result) transform fn for total transform from fixture', () => {
+    const doc = loadManifest(`${fixtures}/transform.manifest.yaml`);
+    const code = generateWrapper(doc);
+    expect(code).toContain('UserProfileTransformToPublicInput = UserProfile');
+    expect(code).toContain('UserProfileTransformToPublicOutput = PublicProfile');
+    expect(code).not.toContain("import type { Result }");
+  });
+});
+
+describe('VALIDATE generator', () => {
+  it('emits Validated narrowed type and Result from fixture', () => {
+    const doc = loadManifest(`${fixtures}/validate.manifest.yaml`);
+    const code = generateWrapper(doc);
+    expect(code).toContain('AuthTokenValidateFormatInput = TokenString');
+    expect(code).toContain('AuthTokenValidateFormatValidated = ValidToken');
+    expect(code).toContain('Result<');
+    expect(code).toContain('AuthError.MALFORMED | AuthError.EXPIRED');
+  });
+});
+
+describe('CACHE generator', () => {
+  it('emits CacheStore interface and KeyFn from fixture', () => {
+    const doc = loadManifest(`${fixtures}/cache.manifest.yaml`);
+    const code = generateWrapper(doc);
+    expect(code).toContain('ProductCatalogCacheDetailsInput = ProductId');
+    expect(code).toContain('CacheStore');
+    expect(code).toContain('KeyFn');
+    expect(code).toContain('Key derivation ARU: product.catalog.compute.cache-key');
+  });
+});
+
+describe('STREAM generator', () => {
+  it('emits AsyncIterable types, SourceFn, ProcessorFn and backpressure from fixture', () => {
+    const doc = loadManifest(`${fixtures}/stream.manifest.yaml`);
+    const code = generateWrapper(doc);
+    expect(code).toContain('LogsPipelineStreamEventsInput = LogEntry');
+    expect(code).toContain('AsyncIterable<');
+    expect(code).toContain('SourceFn');
+    expect(code).toContain('ProcessorFn');
+    expect(code).toContain('Backpressure strategy: BUFFER(500)');
+  });
+});
+
 describe('all 22 pattern generators compile without throwing', () => {
   const allPatterns = [
-    'PIPE', 'FORK', 'JOIN', 'PARALLEL_FORK', 'PARALLEL_JOIN',
-    'SCATTER_GATHER', 'CIRCUIT_BREAKER', 'SAGA', 'COMPENSATING_TRANSACTION',
-    'STREAMING_PIPELINE', 'CACHE_ASIDE', 'BULKHEAD', 'PRIORITY_QUEUE', 'EVENT_SOURCING',
+    'PIPE', 'FORK', 'JOIN', 'GATE', 'ROUTE', 'LOOP', 'OBSERVE', 'TRANSFORM', 'VALIDATE', 'CACHE', 'STREAM',
+    'PARALLEL_FORK', 'PARALLEL_JOIN', 'SCATTER_GATHER', 'CIRCUIT_BREAKER',
+    'SAGA', 'COMPENSATING_TRANSACTION', 'STREAMING_PIPELINE', 'CACHE_ASIDE',
+    'BULKHEAD', 'PRIORITY_QUEUE', 'EVENT_SOURCING',
   ] as const;
 
   for (const pattern of allPatterns) {
@@ -163,7 +250,10 @@ describe('all 22 pattern generators compile without throwing', () => {
       });
       expect(code).toContain('@aria-manifest-hash abc123');
       expect(code).toContain('TestInput');
-      expect(code).toContain('TestOutput');
+      // GATE is a pass-through — output_type equals input_type by design
+      if (pattern !== 'GATE') {
+        expect(code).toContain('TestOutput');
+      }
     });
   }
 });

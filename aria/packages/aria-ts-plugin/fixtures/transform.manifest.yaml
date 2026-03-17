@@ -1,0 +1,9 @@
+identity:
+  address: user.profile.transform.to-public
+  layer: 1
+
+composition:
+  pattern: TRANSFORM
+  input_type: UserProfile
+  output_type: PublicProfile
+  error_types: []

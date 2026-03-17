@@ -1,5 +1,5 @@
 identity:
-  address: notification.dispatch.execute.parallelFork
+  address: notification.dispatch.execute.parallel-fork
   layer: 3
 
 composition:
