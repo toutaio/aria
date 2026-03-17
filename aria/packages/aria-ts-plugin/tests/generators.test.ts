@@ -65,7 +65,84 @@ describe('file header', () => {
   });
 });
 
-describe('all 14 pattern generators compile without throwing', () => {
+describe('PARALLEL_FORK generator', () => {
+  it('generates array result type from fixture', () => {
+    const doc = loadManifest(`${fixtures}/parallel-fork.manifest.yaml`);
+    const code = generateWrapper(doc);
+    expect(code).toContain('@aria-manifest-hash');
+    expect(code).toContain('NotificationDispatchExecuteParallelForkInput = NotificationRequest');
+    expect(code).toContain('Array<Result<');
+  });
+});
+
+describe('SCATTER_GATHER generator', () => {
+  it('generates ReadonlyArray input and array output from fixture', () => {
+    const doc = loadManifest(`${fixtures}/scatter-gather.manifest.yaml`);
+    const code = generateWrapper(doc);
+    expect(code).toContain('ReadonlyArray<');
+    expect(code).toContain('SearchIndexExecuteBulkIndexInput = SearchDocument');
+    expect(code).toContain('SearchIndexExecuteBulkIndexOutput = IndexResult');
+  });
+});
+
+describe('COMPENSATING_TRANSACTION generator', () => {
+  it('emits ForwardFn and CompensationFn from fixture', () => {
+    const doc = loadManifest(`${fixtures}/compensating-transaction.manifest.yaml`);
+    const code = generateWrapper(doc);
+    expect(code).toContain('ForwardFn');
+    expect(code).toContain('CompensationFn');
+    expect(code).toContain('CompensationContext');
+  });
+});
+
+describe('STREAMING_PIPELINE generator', () => {
+  it('emits AsyncIterable types and Chunk type from fixture', () => {
+    const doc = loadManifest(`${fixtures}/streaming-pipeline.manifest.yaml`);
+    const code = generateWrapper(doc);
+    expect(code).toContain('AsyncIterable<');
+    expect(code).toContain('Chunk = RawLogChunk');
+  });
+});
+
+describe('CACHE_ASIDE generator', () => {
+  it('emits CacheStore interface and cache-injected function type from fixture', () => {
+    const doc = loadManifest(`${fixtures}/cache-aside.manifest.yaml`);
+    const code = generateWrapper(doc);
+    expect(code).toContain('CacheStore');
+    expect(code).toContain('ProductCatalogResolveDetailsCacheKey = string');
+  });
+});
+
+describe('BULKHEAD generator', () => {
+  it('emits BulkheadRejected type and pool capacity comment from fixture', () => {
+    const doc = loadManifest(`${fixtures}/bulkhead.manifest.yaml`);
+    const code = generateWrapper(doc);
+    expect(code).toContain('BulkheadRejected');
+    expect(code).toContain('Pool capacity: 20');
+    expect(code).toContain('Pool name: db-pool');
+  });
+});
+
+describe('PRIORITY_QUEUE generator', () => {
+  it('emits priority type annotation from fixture', () => {
+    const doc = loadManifest(`${fixtures}/priority-queue.manifest.yaml`);
+    const code = generateWrapper(doc);
+    expect(code).toContain('JobQueueProcessTaskInput = JobTask');
+    expect(code).toContain('JobQueueProcessTaskOutput = JobResult');
+  });
+});
+
+describe('EVENT_SOURCING generator', () => {
+  it('emits CommandHandlerFn and ProjectionFn from fixture', () => {
+    const doc = loadManifest(`${fixtures}/event-sourcing.manifest.yaml`);
+    const code = generateWrapper(doc);
+    expect(code).toContain('CommandHandlerFn');
+    expect(code).toContain('ProjectionFn');
+    expect(code).toContain('OrderLifecycleExecuteCommandAggregate = OrderAggregate');
+  });
+});
+
+describe('all 22 pattern generators compile without throwing', () => {
   const allPatterns = [
     'PIPE', 'FORK', 'JOIN', 'PARALLEL_FORK', 'PARALLEL_JOIN',
     'SCATTER_GATHER', 'CIRCUIT_BREAKER', 'SAGA', 'COMPENSATING_TRANSACTION',

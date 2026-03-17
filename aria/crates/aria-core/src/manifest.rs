@@ -75,6 +75,14 @@ pub enum CompositionPattern {
     Saga,
     CircuitBreaker,
     ParallelJoin,
+    ParallelFork,
+    ScatterGather,
+    CompensatingTransaction,
+    StreamingPipeline,
+    CacheAside,
+    Bulkhead,
+    PriorityQueue,
+    EventSourcing,
 }
 
 /// Section 1: Identity
@@ -190,6 +198,64 @@ pub struct Composition {
     pub timeout_ms: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub steps: Option<Vec<SagaStep>>,
+    /// CACHE / CACHE_ASIDE: key derivation ARU
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub key_aru: Option<String>,
+    /// STREAM / STREAMING_PIPELINE: element source ARU
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source_aru: Option<String>,
+    /// STREAM / STREAMING_PIPELINE: element processor ARU
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub processor_aru: Option<String>,
+    /// STREAM / STREAMING_PIPELINE: backpressure strategy (DROP | BUFFER(n) | ERROR)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub backpressure: Option<String>,
+    // Fields for new composition patterns
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub input_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub output_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error_types: Option<Vec<String>>,
+    /// COMPENSATING_TRANSACTION: forward ARU semantic address
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub forward_aru: Option<String>,
+    /// COMPENSATING_TRANSACTION: compensation ARU semantic address
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub compensation_aru: Option<String>,
+    /// STREAMING_PIPELINE: chunk type name for element-by-element processing
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub chunk_type: Option<String>,
+    /// CACHE_ASIDE: injected cache store type
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cache_store_type: Option<String>,
+    /// CACHE_ASIDE: cache key type
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cache_key_type: Option<String>,
+    /// BULKHEAD: named pool for isolation
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pool_name: Option<String>,
+    /// BULKHEAD: maximum concurrent entries in pool
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub capacity: Option<u32>,
+    /// BULKHEAD: type emitted when pool is saturated
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub queue_overflow_type: Option<String>,
+    /// PRIORITY_QUEUE: priority envelope type (e.g. "HIGH | NORMAL | LOW")
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub priority_type: Option<String>,
+    /// EVENT_SOURCING: domain event type
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub event_type: Option<String>,
+    /// EVENT_SOURCING: aggregate projection type
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub aggregate_type: Option<String>,
+    /// SCATTER_GATHER: ARU applied to each scattered element
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub worker_aru: Option<String>,
+    /// SCATTER_GATHER: ARU that aggregates gathered results
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub aggregate_aru: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

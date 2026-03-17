@@ -48,7 +48,7 @@ Every ARU has the same anatomy: identity, contract, effects, dependencies, manif
 The semantic addressing system ensures that names follow a single grammar. AI learns the grammar once and reads every name correctly on first encounter.
 
 ### 3. Pattern Resonance
-The 14 composition patterns are the only ways ARUs connect. AI learns 14 patterns and can read any connection in the graph without ambiguity.
+The 22 composition patterns are the only ways ARUs connect. AI learns 22 patterns and can read any connection in the graph without ambiguity.
 
 ### 4. Layer Resonance
 Each layer behaves the same way, just at a different level of abstraction. An organism is a "molecule of molecules." A system is an "organism of organisms." The recursive self-similarity means AI applies the same reasoning at every level.

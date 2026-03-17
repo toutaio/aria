@@ -57,7 +57,7 @@ ARIA synthesizes ideas from several established fields. These are not reinventio
 | Bounded contexts, ubiquitous language | **Domain-Driven Design** — Eric Evans (2003) | L5 Domain maps directly to a DDD bounded context |
 | Hexagonal ports-and-adapters | **Hexagonal Architecture** — Alistair Cockburn (2005) | Infrastructure adapters live at L1/L2 so L3 organisms stay free of I/O concerns |
 | Composition pattern vocabulary | **Enterprise Integration Patterns** — Hohpe & Woolf (2003) | Named patterns (PIPE, SAGA, CIRCUIT_BREAKER…) make inter-ARU topology machine-readable |
-| Railway-oriented error model | **Railway-Oriented Programming** — Scott Wlaschin (fsharpforfun.com) | Formalized as the error-propagation semantics for all 14 composition patterns (see `12-error-propagation.md`) |
+| Railway-oriented error model | **Railway-Oriented Programming** — Scott Wlaschin (fsharpforfun.com) | Formalized as the error-propagation semantics for all 22 composition patterns (see `12-error-propagation.md`) |
 
 ### Further Reading
 
@@ -87,7 +87,7 @@ ARIA synthesizes ideas from several established fields. These are not reinventio
 |---|---|
 | `01-abstraction-layers.md` | The L0–L5 hierarchical model |
 | `02-atomic-responsibility-units.md` | ARU specification and structure |
-| `03-composition-patterns.md` | The 14 composition patterns (10 core + 4 async/distributed) |
+| `03-composition-patterns.md` | The 22 composition patterns (10 core + 4 async/distributed + 8 extended) |
 | `04-context-manifests.md` | Manifest structure and context budgets |
 | `05-semantic-graph.md` | Codebase-as-DAG and context loading |
 | `06-naming-conventions.md` | Semantic addressing system |
@@ -96,7 +96,7 @@ ARIA synthesizes ideas from several established fields. These are not reinventio
 | `09-type-states.md` | Type state machines — encoding data lifecycle in the type |
 | `10-algebraic-types.md` | Sum types, product types, the universal contract grammar |
 | `11-type-compatibility.md` | Rules for connecting ARUs; type checking the graph |
-| `12-error-propagation.md` | Railway-oriented error model; success/failure rails for all 14 patterns |
+| `12-error-propagation.md` | Railway-oriented error model; success/failure rails for all 22 patterns |
 | `13-contract-versioning.md` | Contract lifecycle, migration ARUs, session-level caching |
 | `14-human-ai-collaboration.md` | Layer ownership map, ARIA compliance levels, adoption path |
 | `15-task-decomposition.md` | Subtask grammar, decomposition DAG, parallelization, underspecified detection |

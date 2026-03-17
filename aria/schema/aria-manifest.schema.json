@@ -29,7 +29,10 @@
       "enum": [
         "PIPE", "FORK", "JOIN", "GATE", "ROUTE", "LOOP",
         "OBSERVE", "TRANSFORM", "VALIDATE", "CACHE",
-        "STREAM", "SAGA", "CIRCUIT_BREAKER", "PARALLEL_JOIN"
+        "STREAM", "SAGA", "CIRCUIT_BREAKER", "PARALLEL_JOIN",
+        "PARALLEL_FORK", "SCATTER_GATHER", "COMPENSATING_TRANSACTION",
+        "STREAMING_PIPELINE", "CACHE_ASIDE", "BULKHEAD",
+        "PRIORITY_QUEUE", "EVENT_SOURCING"
       ]
     },
     "derivationSourceEnum": {
@@ -203,7 +206,23 @@
         "timeout_ms": { "type": "integer", "minimum": 1 },
         "partial_success_handler": { "$ref": "#/definitions/semanticAddress" },
         "true_branch": { "$ref": "#/definitions/semanticAddress" },
-        "false_branch": { "$ref": "#/definitions/semanticAddress" }
+        "false_branch": { "$ref": "#/definitions/semanticAddress" },
+        "input_type": { "type": "string", "minLength": 1 },
+        "output_type": { "type": "string", "minLength": 1 },
+        "error_types": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "forward_aru": { "$ref": "#/definitions/semanticAddress" },
+        "compensation_aru": { "$ref": "#/definitions/semanticAddress" },
+        "chunk_type": { "type": "string", "minLength": 1 },
+        "cache_store_type": { "type": "string", "minLength": 1 },
+        "cache_key_type": { "type": "string", "minLength": 1 },
+        "pool_name": { "type": "string", "minLength": 1 },
+        "capacity": { "type": "integer", "minimum": 1 },
+        "queue_overflow_type": { "type": "string", "minLength": 1 },
+        "priority_type": { "type": "string", "minLength": 1 },
+        "event_type": { "type": "string", "minLength": 1 },
+        "aggregate_type": { "type": "string", "minLength": 1 },
+        "worker_aru": { "$ref": "#/definitions/semanticAddress" },
+        "aggregate_aru": { "$ref": "#/definitions/semanticAddress" }
       }
     },
 

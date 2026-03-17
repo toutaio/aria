@@ -1,0 +1,12 @@
+identity:
+  address: job.queue.process.task
+  layer: 3
+
+composition:
+  pattern: PRIORITY_QUEUE
+  input_type: JobTask
+  output_type: JobResult
+  error_types:
+    - JobError.EXECUTION_FAILED
+  target_aru: job.executor.run.task
+  priority_type: "'HIGH' | 'NORMAL' | 'LOW'"

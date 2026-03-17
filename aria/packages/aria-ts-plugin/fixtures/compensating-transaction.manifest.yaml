@@ -1,0 +1,12 @@
+identity:
+  address: inventory.reservation.execute.reserve
+  layer: 3
+
+composition:
+  pattern: COMPENSATING_TRANSACTION
+  input_type: ReservationRequest
+  output_type: ReservationConfirmation
+  error_types:
+    - InventoryError.OUT_OF_STOCK
+  forward_aru: inventory.reservation.apply.hold
+  compensation_aru: inventory.reservation.apply.release

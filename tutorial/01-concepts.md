@@ -262,9 +262,9 @@ The full ARIA type system, including how failure types propagate through composi
 
 ## Composition Patterns
 
-Every connection between two ARUs **must** be declared using one of 14 named patterns in the `connections:` block of the source ARU's manifest. An undeclared connection is a defect — it makes the semantic graph incomplete and breaks AI context loading.
+Every connection between two ARUs **must** be declared using one of 22 named patterns in the `connections:` block of the source ARU's manifest. An undeclared connection is a defect — it makes the semantic graph incomplete and breaks AI context loading.
 
-The 14 patterns cover every meaningful way two units of logic can relate to each other:
+The 22 patterns cover every meaningful way two units of logic can relate to each other:
 
 | # | Pattern | Shape | Use When |
 |---|---------|-------|----------|
@@ -282,6 +282,14 @@ The 14 patterns cover every meaningful way two units of logic can relate to each
 | 12 | SAGA | `[A→B→C] + compensations` | Distributed transaction with typed rollback |
 | 13 | CIRCUIT_BREAKER | `A → B (stateful)` | Stateful failure detection — opens at failure threshold |
 | 14 | PARALLEL_JOIN | `[A,B,C] → D (timeout)` | Fan-out with coordinated collection and timeout budget |
+| 15 | PARALLEL_FORK | `A → [B*, C*]` | Concurrent fan-out; each branch returns `Result<U, E>` |
+| 16 | SCATTER_GATHER | `A → [Worker*] → Agg` | Scatter inputs to workers; aggregate gathered results |
+| 17 | COMPENSATING_TRANSACTION | `A → (A⁺, A⁻)` | Single reversible step with typed compensation |
+| 18 | STREAMING_PIPELINE | `AsyncIter<T> → AsyncIter<U>` | Chunk-by-chunk async transformation with backpressure |
+| 19 | CACHE_ASIDE | `A → B (hit\|miss)` | Read-through cache with injected `CacheStore` adapter |
+| 20 | BULKHEAD | `A → B (pooled)` | Concurrency isolation with bounded pool and backpressure |
+| 21 | PRIORITY_QUEUE | `A[priority] → B` | Priority-envelope dispatch |
+| 22 | EVENT_SOURCING | `Cmd → Events* → Agg` | Command → immutable event log → aggregate projection |
 
 ### Diagrams for the 5 Most Common Patterns
 
@@ -374,7 +382,7 @@ If step 3 fails, the SAGA compensates by running step 2's compensation (deleting
 
 ### Patterns Not Demonstrated in This Tutorial
 
-The following patterns — JOIN, LOOP, TRANSFORM, CACHE, STREAM, PARALLEL_JOIN — are part of the ARIA specification and follow the same rules as the patterns above. They are not used in the URL shortener project, but their full specifications are available in `docs/03-composition-patterns.md`. Each pattern has a generated TypeScript wrapper available via `aria-build generate`.
+The following patterns — JOIN, LOOP, TRANSFORM, CACHE, STREAM, PARALLEL_JOIN, PARALLEL_FORK, SCATTER_GATHER, COMPENSATING_TRANSACTION, STREAMING_PIPELINE, CACHE_ASIDE, BULKHEAD, PRIORITY_QUEUE, EVENT_SOURCING — are part of the ARIA specification and follow the same rules as the patterns above. They are not used in the URL shortener project, but their full specifications are available in `docs/03-composition-patterns.md`. Each pattern has a generated TypeScript wrapper available via `aria-build generate`.
 
 ---
 

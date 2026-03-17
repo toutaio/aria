@@ -1,0 +1,14 @@
+identity:
+  address: database.connection.execute.query
+  layer: 3
+
+composition:
+  pattern: BULKHEAD
+  input_type: QueryRequest
+  output_type: QueryResult
+  error_types:
+    - DatabaseError.QUERY_FAILED
+  target_aru: database.connection.run.sql
+  pool_name: db-pool
+  capacity: 20
+  queue_overflow_type: DatabaseError.POOL_EXHAUSTED

@@ -1,0 +1,12 @@
+identity:
+  address: order.lifecycle.execute.command
+  layer: 3
+
+composition:
+  pattern: EVENT_SOURCING
+  input_type: OrderCommand
+  output_type: OrderEvent
+  error_types:
+    - OrderError.INVALID_TRANSITION
+  event_type: OrderEvent
+  aggregate_type: OrderAggregate

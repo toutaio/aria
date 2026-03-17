@@ -49,7 +49,7 @@ ai-architecture/
 │   │   └── aria-lsp/            # Rust LSP server: real-time IDE validation
 │   ├── packages/
 │   │   ├── aria-runtime/        # @aria/runtime — Result<T,E>, RailError, ThreeTrack
-│   │   ├── aria-ts-plugin/      # TypeScript code generator (all 14 patterns)
+│   │   ├── aria-ts-plugin/      # TypeScript code generator (all 22 patterns)
 │   │   ├── aria-vscode/         # VS Code extension wrapper
 │   │   ├── aria-build-bin/      # @aria/build-bin — platform binary shim
 │   │   └── aria-build-bin-*/    # Platform-specific binary packages
@@ -208,7 +208,7 @@ See [doc 20 — Unified Manifest Schema](docs/20-manifest-schema.md) for full fi
 
 ## Composition Patterns
 
-ARIA defines 14 implemented composition patterns covering all common distributed system concerns:
+ARIA defines 22 composition patterns covering all common distributed system concerns:
 
 | Pattern | Use Case |
 |---|---|
@@ -226,21 +226,14 @@ ARIA defines 14 implemented composition patterns covering all common distributed
 | `SAGA` | Distributed transaction with typed compensation steps |
 | `CIRCUIT_BREAKER` | Stateful failure detection — opens at failure threshold |
 | `PARALLEL_JOIN` | Concurrent fan-out with coordinated collection and timeout |
-
-### Planned Patterns (Not Yet Implemented)
-
-The following 8 patterns are part of the ARIA roadmap and will be added in future releases:
-
-| Pattern | Description |
-|---|---|
-| `PARALLEL_FORK` | Concurrent fan-out: `T → Array<Result<U, E>>` |
-| `SCATTER_GATHER` | Scatter inputs → gather results |
-| `COMPENSATING_TRANSACTION` | Forward + compensation ARU pair |
+| `PARALLEL_FORK` | Concurrent fan-out with independent per-branch `Result` collection |
+| `SCATTER_GATHER` | Scatter inputs to workers → gather and aggregate results |
+| `COMPENSATING_TRANSACTION` | Forward + typed compensation ARU pair (single-step SAGA) |
 | `STREAMING_PIPELINE` | `AsyncIterable<Chunk> → AsyncIterable<Result<U, E>>` |
-| `CACHE_ASIDE` | Read-through cache with injected CacheStore |
-| `BULKHEAD` | Concurrency isolation with pool injection |
-| `PRIORITY_QUEUE` | Priority-envelope dispatch |
-| `EVENT_SOURCING` | Command → events + aggregate projection |
+| `CACHE_ASIDE` | Read-through cache with injected `CacheStore` adapter |
+| `BULKHEAD` | Concurrency isolation with bounded pool and backpressure |
+| `PRIORITY_QUEUE` | Priority-envelope dispatch — highest-priority processes first |
+| `EVENT_SOURCING` | Command → immutable event log → aggregate projection |
 
 See [doc 03 — Composition Patterns](docs/03-composition-patterns.md) for full details.
 
