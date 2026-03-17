@@ -18,7 +18,7 @@ mod naming_tests {
                     verb: verb.to_string(),
                     entity: "sig".to_string(),
                 },
-                layer: LayerSection { declared: declared_layer, inferred: inferred_layer },
+                layer: LayerSection { declared: declared_layer, inferred: Some(inferred_layer) },
                 contract: Contract {
                     input: ContractInput { type_name: "T".to_string(), constraints: vec![] },
                     output: ContractOutput {
@@ -171,7 +171,7 @@ mod cycle_tests {
                     verb: "validate".to_string(),
                     entity: "thing".to_string(),
                 },
-                layer: LayerSection { declared: layer.clone(), inferred: layer },
+                layer: LayerSection { declared: layer.clone(), inferred: Some(layer) },
                 contract: Contract {
                     input: ContractInput { type_name: "T".to_string(), constraints: vec![] },
                     output: ContractOutput { success: "S".to_string(), failure: "DomainError.FAIL".to_string() },

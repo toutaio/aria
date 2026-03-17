@@ -64,7 +64,7 @@ mod tests {
             },
             layer: LayerSection {
                 declared: Layer::L1,
-                inferred: Layer::L1,
+                inferred: Some(Layer::L1),
             },
             contract: Contract {
                 input: ContractInput { type_name: "T".into(), constraints: vec![] },
@@ -130,6 +130,26 @@ mod tests {
             minimum_required_results: None,
             timeout_ms: None,
             steps: None,
+            key_aru: None,
+            source_aru: None,
+            processor_aru: None,
+            backpressure: None,
+            input_type: None,
+            output_type: None,
+            error_types: None,
+            forward_aru: None,
+            compensation_aru: None,
+            chunk_type: None,
+            cache_store_type: None,
+            cache_key_type: None,
+            pool_name: None,
+            capacity: None,
+            queue_overflow_type: None,
+            priority_type: None,
+            event_type: None,
+            aggregate_type: None,
+            worker_aru: None,
+            aggregate_aru: None,
         });
 
         let hash_with = canonical_hash(&m);
