@@ -64,7 +64,7 @@ mod tests {
             },
             layer: LayerSection {
                 declared: Layer::L1,
-                inferred: Layer::L1,
+                inferred: Some(Layer::L1),
             },
             contract: Contract {
                 input: ContractInput { type_name: "T".into(), constraints: vec![] },
@@ -117,19 +117,7 @@ mod tests {
         m.composition = Some(Composition {
             pattern: CompositionPattern::Pipe,
             chain: Some(vec!["auth.token.validate.sig".into()]),
-            branches: None,
-            error_handler: None,
-            merge_type: None,
-            predicate_aru: None,
-            condition_aru: None,
-            max_iterations: None,
-            target_aru: None,
-            failure_threshold: None,
-            evaluation_window_ms: None,
-            half_open_probe_interval_ms: None,
-            minimum_required_results: None,
-            timeout_ms: None,
-            steps: None,
+            ..Default::default()
         });
 
         let hash_with = canonical_hash(&m);

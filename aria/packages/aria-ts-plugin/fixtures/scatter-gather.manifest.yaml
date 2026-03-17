@@ -1,0 +1,13 @@
+identity:
+  address: search.index.execute.bulk-index
+  layer: 3
+
+composition:
+  pattern: SCATTER_GATHER
+  input_type: SearchDocument
+  output_type: IndexResult
+  error_types:
+    - SearchError.INDEX_FAILED
+  worker_aru: search.index.process.document
+  aggregate_aru: search.index.build.resultSet
+  error_handler: search.index.handle.error

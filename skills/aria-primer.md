@@ -16,7 +16,7 @@
 
 > If every component has an unambiguous contract, a precise responsibility, a known layer, a typed interface, and a predictable connection model — an AI can work with maximum precision using minimum context.
 
-Every piece of code is an **ARU (Atomic Responsibility Unit)** described by a **manifest file**. ARUs connect through one of **14 named composition patterns**. The whole system forms a **Semantic Graph** navigable without reading implementation code.
+Every piece of code is an **ARU (Atomic Responsibility Unit)** described by a **manifest file**. ARUs connect through one of **22 named composition patterns**. The whole system forms a **Semantic Graph** navigable without reading implementation code.
 
 ---
 
@@ -66,7 +66,7 @@ An **ARU** has: one reason to exist · one typed input · one typed output · on
 
 ## Pillar 3 — Composition Patterns (HOW)
 
-Every connection between ARUs **must** be declared as one of these 14 patterns. Undeclared connections are architectural defects.
+Every connection between ARUs **must** be declared as one of these 22 patterns. Undeclared connections are architectural defects.
 
 | # | Pattern         | Shape                     | Description                                                        |
 |---|-----------------|---------------------------|--------------------------------------------------------------------|
@@ -84,6 +84,14 @@ Every connection between ARUs **must** be declared as one of these 14 patterns. 
 |12 | SAGA            | `[A→B→C] + [C⁻¹→B⁻¹→A⁻¹]`| Distributed transaction with typed compensating actions            |
 |13 | CIRCUIT_BREAKER | `A → B (stateful)`        | Stateful failure detection; opens circuit at failure threshold     |
 |14 | PARALLEL_JOIN   | `[A,B,C] → D (timeout)`   | Fan-out with coordinated collection within a time budget           |
+|15 | PARALLEL_FORK   | `A → [B*, C*]`            | Concurrent fan-out; each branch returns `Result<U, E>` independently |
+|16 | SCATTER_GATHER  | `A → [Worker*] → Agg`     | Scatter inputs to workers; aggregate gathered results              |
+|17 | COMPENSATING_TRANSACTION | `A → (A⁺, A⁻)`  | Forward + typed compensation ARU pair (single-step SAGA)           |
+|18 | STREAMING_PIPELINE | `AsyncIter<T> → AsyncIter<U>` | Chunk-by-chunk async transformation with backpressure        |
+|19 | CACHE_ASIDE     | `A → B (hit\|miss→fetch)` | Read-through cache with injected `CacheStore` adapter              |
+|20 | BULKHEAD        | `A → B (pooled)`          | Concurrency isolation with bounded pool and backpressure           |
+|21 | PRIORITY_QUEUE  | `A[priority] → B`         | Priority-envelope dispatch; highest-priority processed first       |
+|22 | EVENT_SOURCING  | `Cmd → Events* → Agg`     | Command → immutable event log → aggregate projection               |
 
 ---
 
@@ -210,7 +218,7 @@ aria-build impact auth.identity.authenticate.user
 # Bundle all manifests into a semantic graph snapshot
 aria-build bundle ./src
 
-# Generate TypeScript wrappers from manifests (all 14 patterns)
+# Generate TypeScript wrappers from manifests (all 22 patterns)
 aria-build generate ./src
 ```
 
@@ -249,7 +257,7 @@ aria-build generate ./src
 Layer?    → Pick L0–L5 based on what the code IS (type/operation/logic/orchestration/boundary)
 Name?     → domain.subdomain.VERB.entity  (verb must match layer's verb vocabulary)
 File?     → same-name.manifest.yaml co-located with implementation
-Connect?  → choose one of 14 patterns; declare in manifest `connections:` block
+Connect?  → choose one of 22 patterns; declare in manifest `connections:` block
 Validate? → aria-build check ./src
 Impact?   → aria-build impact <address>
 ```

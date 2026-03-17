@@ -1,0 +1,15 @@
+identity:
+  address: product.catalog.resolve.details
+  layer: 3
+
+composition:
+  pattern: CACHE_ASIDE
+  input_type: ProductId
+  output_type: ProductDetails
+  error_types:
+    - CatalogError.NOT_FOUND
+  cache_store_type: ProductCacheStore
+  cache_key_type: string
+  target_aru: product.catalog.fetch.fromDatabase
+  key_aru: product.catalog.compute.cacheKey
+  ttl_seconds: 300

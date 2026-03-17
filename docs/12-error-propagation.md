@@ -5,13 +5,13 @@
 
 ## Influence: Railway-Oriented Programming
 
-The error model in this document is a formalization of **Railway-Oriented Programming**, a pattern described by Scott Wlaschin at [fsharpforfun.com/posts/recipe-part2](https://fsharpforfun.com/posts/recipe-part2). The core metaphor — a two-track railway where success travels on one rail and failure on the other, with functions that switch tracks but never silently discard errors — maps directly onto ARIA's `Result<T, E>` propagation model. ARIA extends it by specifying the failure semantics for all 14 composition patterns and by making error handling a manifest-declared concern rather than an implementation convention.
+The error model in this document is a formalization of **Railway-Oriented Programming**, a pattern described by Scott Wlaschin at [fsharpforfun.com/posts/recipe-part2](https://fsharpforfun.com/posts/recipe-part2). The core metaphor — a two-track railway where success travels on one rail and failure on the other, with functions that switch tracks but never silently discard errors — maps directly onto ARIA's `Result<T, E>` propagation model. ARIA extends it by specifying the failure semantics for all 22 composition patterns and by making error handling a manifest-declared concern rather than an implementation convention.
 
 ---
 
 ## The Gap (Resolved)
 
-The original gap: `03-composition-patterns.md` defined what happens when everything succeeds, but was silent on failure. This document formally resolves that gap with the railway-oriented model below. The failure semantics for all 14 composition patterns are now fully specified — see the **Complete Pattern Failure Semantics Reference** table at the end of this document.
+The original gap: `03-composition-patterns.md` defined what happens when everything succeeds, but was silent on failure. This document formally resolves that gap with the railway-oriented model below. The failure semantics for all 22 composition patterns are now fully specified — see the **Complete Pattern Failure Semantics Reference** table at the end of this document.
 
 The problem this solves: in a `PIPE` chain of five ARUs, if ARU #3 returns an error, do ARUs #4 and #5 execute? Who catches the error? Where is it handled?
 
@@ -472,7 +472,15 @@ distinct error variant. Treating it as a generic failure is a build warning (it 
 | STREAM | Elements processed | Element or stream-level failure | Two granularities: element vs. stream |
 | SAGA | COMMITTED | COMPENSATED or PARTIAL | Compensation runs on failure rail |
 | CIRCUIT_BREAKER | Result delivered | CIRCUIT_OPEN or EXECUTION_FAILURE | OPEN = fast-fail, not underlying error |
-| PARALLEL_JOIN | Complete product | Fewer than minimum succeed | PARTIAL_SUCCESS track for partial results | and Error Propagation
+| PARALLEL_JOIN | Complete product | Fewer than minimum succeed | PARTIAL_SUCCESS track for partial results |
+| PARALLEL_FORK | All branches get value | Pre-fork failure only | Each branch has independent failure rail |
+| SCATTER_GATHER | Aggregated results | Worker or aggregator ARU failure | Partial results possible with timeout |
+| COMPENSATING_TRANSACTION | Forward ARU output | Forward fails → compensation runs | Compensation failure = UNRECOVERABLE error |
+| STREAMING_PIPELINE | Processed chunk stream | Chunk processor failure | Configurable: stop vs. skip-bad-chunk |
+| CACHE_ASIDE | Cache hit or loaded value | Load failure on miss | TTL expiry is not failure — triggers reload |
+| BULKHEAD | Result from target ARU | Pool exhausted → QUEUE_OVERFLOW error | Timeout waiting in queue is also an error |
+| PRIORITY_QUEUE | Result from target ARU | Target failure or queue overflow | High-priority items never dropped silently |
+| EVENT_SOURCING | Projected aggregate | Projection failure | Event append is always success-rail | and Error Propagation
 
 When a composition is nested inside another (a PIPE chain inside an ORGANISM inside a SYSTEM), failure rails compose:
 

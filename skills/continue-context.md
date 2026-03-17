@@ -18,7 +18,7 @@ The content below covers the complete ARIA framework primer so Continue.dev prov
 
 ---
 
-You are working in an **ARIA (Atomic Responsibility Interface Architecture)** repository. ARIA is a framework for AI-optimised software construction. Every piece of code is an ARU (Atomic Responsibility Unit) described by a manifest file. ARUs connect through 14 named composition patterns forming a Semantic Graph.
+You are working in an **ARIA (Atomic Responsibility Interface Architecture)** repository. ARIA is a framework for AI-optimised software construction. Every piece of code is an ARU (Atomic Responsibility Unit) described by a manifest file. ARUs connect through 22 named composition patterns forming a Semantic Graph.
 
 **Full docs**: `docs/` directory (24 specification documents)
 **Schema**: `aria/schema/aria-manifest.schema.json`
@@ -104,7 +104,7 @@ manifest:
 
 ## Composition Patterns — declare every connection
 
-Every inter-ARU connection must use one of these 14 patterns declared in `connections:`:
+Every inter-ARU connection must use one of these 22 patterns declared in `connections:`:
 
 | # | Pattern         | Use when                                              |
 |---|-----------------|-------------------------------------------------------|
@@ -122,6 +122,14 @@ Every inter-ARU connection must use one of these 14 patterns declared in `connec
 |12 | SAGA            | Distributed tx with typed compensating actions        |
 |13 | CIRCUIT_BREAKER | Stateful failure detection with threshold             |
 |14 | PARALLEL_JOIN   | Concurrent fan-out with timeout budget                |
+|15 | PARALLEL_FORK   | Concurrent fan-out; collect each `Result` independently |
+|16 | SCATTER_GATHER  | Scatter input array to workers; gather results        |
+|17 | COMPENSATING_TRANSACTION | Single reversible step with typed compensation |
+|18 | STREAMING_PIPELINE | `AsyncIterable<T>` → `AsyncIterable<U>` with backpressure |
+|19 | CACHE_ASIDE     | Read-through cache with injected `CacheStore` adapter |
+|20 | BULKHEAD        | Concurrency isolation with bounded pool               |
+|21 | PRIORITY_QUEUE  | Priority-envelope dispatch                            |
+|22 | EVENT_SOURCING  | Command → event log → aggregate projection            |
 
 ## CLI Commands
 

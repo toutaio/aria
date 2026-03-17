@@ -86,7 +86,7 @@ Eight of the fourteen composition patterns appeared in this tutorial:
 
 **PARALLEL_JOIN** — concurrent fan-out with a timeout budget. Multiple operations run simultaneously; results are collected and merged. Supports partial results on timeout.
 
-The six patterns not demonstrated in this tutorial — **JOIN**, **GATE**, **LOOP**, **TRANSFORM**, **CACHE**, and **STREAM** — follow exactly the same declaration model. Each has a named pattern, a `target`, and an optional `config` block. The semantics differ, but the structure is consistent. Once you've read one pattern declaration in a manifest, you can read any of the others.
+The patterns not demonstrated in this tutorial — **JOIN**, **GATE**, **LOOP**, **TRANSFORM**, **CACHE**, **STREAM**, **PARALLEL_FORK**, **SCATTER_GATHER**, **COMPENSATING_TRANSACTION**, **STREAMING_PIPELINE**, **CACHE_ASIDE**, **BULKHEAD**, **PRIORITY_QUEUE**, and **EVENT_SOURCING** — follow exactly the same declaration model. Each has a named pattern, a `target`, and an optional `config` block. The semantics differ, but the structure is consistent. Once you've read one pattern declaration in a manifest, you can read any of the others.
 
 ---
 
@@ -96,7 +96,7 @@ The six patterns not demonstrated in this tutorial — **JOIN**, **GATE**, **LOO
 
 - [`docs/00-overview.md`](../docs/00-overview.md) — full ARIA framework overview, design philosophy, and goals
 - [`docs/01-abstraction-layers.md`](../docs/01-abstraction-layers.md) — detailed layer specification with dependency rules and compliance levels
-- [`docs/03-composition-patterns.md`](../docs/03-composition-patterns.md) — all 14 patterns in depth, with visual diagrams and implementation examples
+- [`docs/03-composition-patterns.md`](../docs/03-composition-patterns.md) — all 22 patterns in depth, with visual diagrams and implementation examples
 - [`docs/04-context-manifests.md`](../docs/04-context-manifests.md) — complete manifest schema reference, including all optional fields
 - [`docs/06-naming-conventions.md`](../docs/06-naming-conventions.md) — naming rules, edge cases, and guidance for domains with complex subdomains
 - [`docs/17-aru-lifecycle.md`](../docs/17-aru-lifecycle.md) — ARU lifecycle management: when to promote from EXPERIMENTAL to STABLE to FROZEN, and what each transition means
@@ -125,7 +125,7 @@ aria-build bundle ./src
 # Impact analysis before changing an ARU
 aria-build impact url.store.persist.link
 
-# Generate TypeScript wrappers for all 14 patterns
+# Generate TypeScript wrappers for all 22 patterns
 aria-build generate ./src
 ```
 

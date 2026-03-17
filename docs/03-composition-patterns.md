@@ -13,7 +13,7 @@ Every connection between two ARUs must be declared as one of these patterns. Und
 
 ---
 
-## The 10 Composition Patterns
+## Core Composition Patterns
 
 ### 1. PIPE `A → B`
 Linear transformation. Output of A is the input of B.
@@ -224,6 +224,123 @@ Fan-out with coordinated collection and timeout. Unlike JOIN (which waits indefi
 
 ---
 
+## Extended Patterns
+
+The following 8 patterns extend the core 14 for concurrent, cached, and event-driven workflows. They are fully implemented in `aria-build generate` and `aria-lsp`. Valid only at L3 (Organism) and above.
+
+---
+
+### 15. PARALLEL_FORK `A → [B*, C*]`
+Concurrent fan-out with independent result collection. Unlike FORK (fire-and-forget broadcast), PARALLEL_FORK awaits all branches and collects each `Result<U, E>` individually.
+
+```
+              ┌──▶ [B: X → Result<Y1, E>]  ──┐
+[A: X] ───────┤                               ├──▶ Array<Result<Y, E>>
+              └──▶ [C: X → Result<Y2, E>]  ──┘
+```
+- All branches receive the same input simultaneously
+- Each branch result is independently success or failure
+- Caller receives `Array<Result<U, E>>` — partial failures are not fatal
+- Equivalent to `Promise.allSettled` semantics
+- `error_handler` is required
+
+---
+
+### 16. SCATTER_GATHER `A → [Worker*] → Aggregate`
+Scatter a collection of inputs to identical workers, then gather partial results into an aggregate.
+
+```
+[Input[]] ──scatter──▶ [Worker: T → U]* ──gather──▶ [Aggregate: U[] → Z]
+```
+- `worker_aru`: ARU applied to each element of the input array
+- `aggregate_aru`: ARU that combines all worker results
+- `error_handler` is required
+- Used for: bulk processing, map-reduce, parallel enrichment of collections
+
+---
+
+### 17. COMPENSATING_TRANSACTION `A → (A⁺, A⁻)`
+Declares a forward ARU paired with a typed compensation ARU. Simpler than SAGA — covers the case of a single step that must be undoable.
+
+```
+[Forward: T → U] paired with [Compensation: (T, Partial<U>) → void]
+```
+- `forward_aru`: the ARU that performs the operation
+- `compensation_aru`: the ARU that undoes it; receives the original input and any partial output
+- Compensation must be idempotent
+- Used for: reservation/release patterns, reversible side effects
+
+---
+
+### 18. STREAMING_PIPELINE `AsyncIterable<Chunk> → AsyncIterable<Result<U, E>>`
+Lazy chunk-by-chunk transformation. Unlike STREAM (which models a source→processor pair in the manifest), STREAMING_PIPELINE declares the type contract for an ARU that transforms a stream to a stream.
+
+```
+[A: AsyncIterable<Chunk> → AsyncIterable<Result<U, E>>]
+```
+- `source_aru`: the ARU that produces the input stream
+- `processor_aru`: the ARU that processes each chunk
+- `backpressure` is required: `DROP | BUFFER(n) | ERROR`
+- `chunk_type`: TypeScript type name for the stream element
+- Used for: file parsing, log ingestion, real-time transformation pipelines
+
+---
+
+### 19. CACHE_ASIDE `A → B (cache hit) | (miss → fetch → cache → B)`
+Read-through cache with an injected `CacheStore` adapter. The underlying ARU is unchanged; the cache layer is declared in the manifest.
+
+```
+[key(X)] ──hit──▶ cached_Y
+         ──miss──▶ [Target: X → Y] ──▶ cache.set(key, Y) ──▶ Y
+```
+- `target_aru`: the ARU whose output is being cached
+- `key_aru`: derives the cache key from the input
+- `cache_store_type`: TypeScript type name for the injected cache backend
+- `cache_key_type`: TypeScript type name for the cache key
+- Only valid when `target_aru` is declared `deterministic: true`
+
+---
+
+### 20. BULKHEAD `A → B (pooled, bounded)`
+Concurrency isolation with a bounded pool and backpressure. Prevents a single misbehaving caller from saturating a shared resource.
+
+```
+[Target ARU] ── guarded by pool(capacity=N) ──▶ Result<U, E | BulkheadRejected>
+```
+- `target_aru`: the ARU being protected by the bulkhead
+- `capacity`: maximum concurrent in-flight calls (required)
+- `pool_name`: named pool for sharing across multiple bulkheads
+- `queue_overflow_type`: type emitted when pool is saturated (defaults to `BulkheadRejected`)
+- Used for: database connection pools, rate-limited external APIs
+
+---
+
+### 21. PRIORITY_QUEUE `A[priority] → B`
+Priority-envelope dispatch. Requests are stamped with a priority level and processed in priority order.
+
+```
+[A: (T, Priority) → U] where Priority = HIGH | NORMAL | LOW
+```
+- `target_aru`: the ARU that processes each dequeued item
+- `priority_type`: TypeScript union type for priority levels (e.g. `'HIGH' | 'NORMAL' | 'LOW'`)
+- Used for: job queues, SLA-tiered processing, interrupt-driven workflows
+
+---
+
+### 22. EVENT_SOURCING `Command → Events* → Aggregate`
+Command-driven event log with aggregate projection. The ARU handles a command, emits domain events, and a separate projection function folds events into aggregate state.
+
+```
+[CommandHandler: (Command, Aggregate) → Result<Event[], Error>]
+[Projection: (Aggregate, Event) → Aggregate]
+```
+- `event_type`: TypeScript type for the domain event union
+- `aggregate_type`: TypeScript type for the aggregate state
+- Two generated function types: `CommandHandlerFn` and `ProjectionFn`
+- Used for: audit-complete state machines, CQRS write sides, temporal event replay
+
+---
+
 ## Updated Pattern Composition Matrix
 
 | Composite | Built From | Common Use |
@@ -250,25 +367,6 @@ This means:
 - Refactoring is a graph operation: swap a node, keep the edges, verify type compatibility
 
 The pattern declaration IS the design. Implementation is the execution of the design.
-
----
-
-## Planned Patterns (Not Yet Implemented)
-
-The following 8 patterns are on the ARIA roadmap. They follow the same declaration rules as implemented patterns — manifest `connections:` blocks may reference them, but the CLI will emit a warning and `aria-build generate` will not produce TypeScript wrappers until they are implemented.
-
-> 🔮 **Planned** — not yet available in `aria-build generate` or `aria-lsp`.
-
-| Pattern | Description | Shape |
-|---|---|---|
-| `PARALLEL_FORK` | Concurrent fan-out with independent result collection | `A → [B*, C*]` (concurrent) |
-| `SCATTER_GATHER` | Scatter inputs to workers → gather partial results | `A → [Worker*] → Aggregate` |
-| `COMPENSATING_TRANSACTION` | Forward + typed compensation ARU pair | `A → (A⁺, A⁻)` |
-| `STREAMING_PIPELINE` | Lazy/infinite chunk-by-chunk transformation | `AsyncIterable<A> → AsyncIterable<B>` |
-| `CACHE_ASIDE` | Read-through cache with injected CacheStore adapter | `A → B (cache hit) \| (miss → fetch → cache → B)` |
-| `BULKHEAD` | Concurrency isolation — bounded pool with backpressure | `A → B (pooled, bounded)` |
-| `PRIORITY_QUEUE` | Priority-envelope dispatch — highest-priority processes first | `A[priority] → B` |
-| `EVENT_SOURCING` | Command → immutable event log → aggregate projection | `Command → Events* → Aggregate` |
 
 ---
 

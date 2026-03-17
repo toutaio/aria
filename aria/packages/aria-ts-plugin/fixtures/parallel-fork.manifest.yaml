@@ -1,0 +1,14 @@
+identity:
+  address: notification.dispatch.execute.parallel-fork
+  layer: 3
+
+composition:
+  pattern: PARALLEL_FORK
+  input_type: NotificationRequest
+  output_type: NotificationResult
+  error_types:
+    - NotificationError.DELIVERY_FAILED
+  branches:
+    - notification.email.send.message
+    - notification.sms.send.message
+  error_handler: notification.dispatch.handle.error

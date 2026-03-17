@@ -152,6 +152,130 @@ pub fn check_type_compatibility(graph: &SemanticGraph) -> CheckResult {
                     ));
                 }
             }
+            CompositionPattern::ParallelFork => {
+                if comp.branches.as_ref().map(|b| b.is_empty()).unwrap_or(true) {
+                    diagnostics.push(Diagnostic::error(
+                        &node.file, 0, 0,
+                        format!("PARALLEL_FORK composition '{}' has no branches defined", node.id),
+                    ));
+                }
+                if comp.error_handler.is_none() {
+                    diagnostics.push(Diagnostic::error(
+                        &node.file, 0, 0,
+                        format!("PARALLEL_FORK composition '{}' missing required error_handler", node.id),
+                    ));
+                }
+            }
+            CompositionPattern::ScatterGather => {
+                if comp.worker_aru.is_none() {
+                    diagnostics.push(Diagnostic::error(
+                        &node.file, 0, 0,
+                        format!("SCATTER_GATHER composition '{}' missing required worker_aru", node.id),
+                    ));
+                }
+                if comp.aggregate_aru.is_none() {
+                    diagnostics.push(Diagnostic::error(
+                        &node.file, 0, 0,
+                        format!("SCATTER_GATHER composition '{}' missing required aggregate_aru", node.id),
+                    ));
+                }
+                if comp.error_handler.is_none() {
+                    diagnostics.push(Diagnostic::error(
+                        &node.file, 0, 0,
+                        format!("SCATTER_GATHER composition '{}' missing required error_handler", node.id),
+                    ));
+                }
+            }
+            CompositionPattern::CompensatingTransaction => {
+                if comp.forward_aru.is_none() {
+                    diagnostics.push(Diagnostic::error(
+                        &node.file, 0, 0,
+                        format!("COMPENSATING_TRANSACTION composition '{}' missing required forward_aru", node.id),
+                    ));
+                }
+                if comp.compensation_aru.is_none() {
+                    diagnostics.push(Diagnostic::error(
+                        &node.file, 0, 0,
+                        format!("COMPENSATING_TRANSACTION composition '{}' missing required compensation_aru", node.id),
+                    ));
+                }
+            }
+            CompositionPattern::StreamingPipeline => {
+                if comp.source_aru.is_none() {
+                    diagnostics.push(Diagnostic::error(
+                        &node.file, 0, 0,
+                        format!("STREAMING_PIPELINE composition '{}' missing required source_aru", node.id),
+                    ));
+                }
+                if comp.processor_aru.is_none() {
+                    diagnostics.push(Diagnostic::error(
+                        &node.file, 0, 0,
+                        format!("STREAMING_PIPELINE composition '{}' missing required processor_aru", node.id),
+                    ));
+                }
+                if comp.backpressure.is_none() {
+                    diagnostics.push(Diagnostic::error(
+                        &node.file, 0, 0,
+                        format!("STREAMING_PIPELINE composition '{}' missing required backpressure declaration", node.id),
+                    ));
+                }
+            }
+            CompositionPattern::CacheAside => {
+                if comp.target_aru.is_none() {
+                    diagnostics.push(Diagnostic::error(
+                        &node.file, 0, 0,
+                        format!("CACHE_ASIDE composition '{}' missing required target_aru (the ARU being cached)", node.id),
+                    ));
+                }
+                if comp.key_aru.is_none() {
+                    diagnostics.push(Diagnostic::error(
+                        &node.file, 0, 0,
+                        format!("CACHE_ASIDE composition '{}' missing required key_aru", node.id),
+                    ));
+                }
+            }
+            CompositionPattern::Bulkhead => {
+                if comp.capacity.is_none() {
+                    diagnostics.push(Diagnostic::error(
+                        &node.file, 0, 0,
+                        format!("BULKHEAD composition '{}' missing required capacity", node.id),
+                    ));
+                }
+                if comp.target_aru.is_none() {
+                    diagnostics.push(Diagnostic::error(
+                        &node.file, 0, 0,
+                        format!("BULKHEAD composition '{}' missing required target_aru", node.id),
+                    ));
+                }
+            }
+            CompositionPattern::PriorityQueue => {
+                if comp.target_aru.is_none() {
+                    diagnostics.push(Diagnostic::error(
+                        &node.file, 0, 0,
+                        format!("PRIORITY_QUEUE composition '{}' missing required target_aru", node.id),
+                    ));
+                }
+                if comp.priority_type.is_none() {
+                    diagnostics.push(Diagnostic::error(
+                        &node.file, 0, 0,
+                        format!("PRIORITY_QUEUE composition '{}' missing required priority_type", node.id),
+                    ));
+                }
+            }
+            CompositionPattern::EventSourcing => {
+                if comp.event_type.is_none() {
+                    diagnostics.push(Diagnostic::error(
+                        &node.file, 0, 0,
+                        format!("EVENT_SOURCING composition '{}' missing required event_type", node.id),
+                    ));
+                }
+                if comp.aggregate_type.is_none() {
+                    diagnostics.push(Diagnostic::error(
+                        &node.file, 0, 0,
+                        format!("EVENT_SOURCING composition '{}' missing required aggregate_type", node.id),
+                    ));
+                }
+            }
             // OBSERVE, TRANSFORM, VALIDATE, CACHE: flexible — no strict required fields beyond pattern
             _ => {}
         }

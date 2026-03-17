@@ -1,0 +1,14 @@
+identity:
+  address: log.ingestion.process.stream
+  layer: 3
+
+composition:
+  pattern: STREAMING_PIPELINE
+  input_type: LogLine
+  output_type: ParsedLogEntry
+  error_types:
+    - LogError.PARSE_FAILED
+  chunk_type: RawLogChunk
+  source_aru: log.source.produce.lines
+  processor_aru: log.parser.transform.line
+  backpressure: BUFFER(256)

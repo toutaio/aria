@@ -7,6 +7,14 @@ export type CompositionPattern =
   | 'PIPE'
   | 'FORK'
   | 'JOIN'
+  | 'GATE'
+  | 'ROUTE'
+  | 'LOOP'
+  | 'OBSERVE'
+  | 'TRANSFORM'
+  | 'VALIDATE'
+  | 'CACHE'
+  | 'STREAM'
   | 'PARALLEL_FORK'
   | 'PARALLEL_JOIN'
   | 'SCATTER_GATHER'
@@ -24,6 +32,19 @@ export interface ManifestComposition {
   input_type: string;
   output_type: string;
   error_types?: string[];
+  // GATE / ROUTE: predicate/condition ARU
+  predicate_aru?: string;
+  condition_aru?: string;
+  // LOOP: iteration cap
+  max_iterations?: number;
+  // OBSERVE / TRANSFORM / VALIDATE / CACHE / STREAM: target ARU
+  target_aru?: string;
+  // CACHE: key derivation ARU
+  key_aru?: string;
+  // STREAM: element source and processor ARUs
+  source_aru?: string;
+  processor_aru?: string;
+  backpressure?: string;
   // PARALLEL_FORK / PARALLEL_JOIN
   branches?: string[];
   minimum_required_results?: number;

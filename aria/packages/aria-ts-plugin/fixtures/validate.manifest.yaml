@@ -1,0 +1,11 @@
+identity:
+  address: auth.token.validate.format
+  layer: 1
+
+composition:
+  pattern: VALIDATE
+  input_type: TokenString
+  output_type: ValidToken
+  error_types:
+    - AuthError.MALFORMED
+    - AuthError.EXPIRED

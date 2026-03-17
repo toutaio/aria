@@ -1,0 +1,9 @@
+identity:
+  address: audit.event.observe.user-action
+  layer: 2
+
+composition:
+  pattern: OBSERVE
+  input_type: UserAction
+  output_type: AuditEvent
+  error_types: []
