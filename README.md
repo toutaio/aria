@@ -59,6 +59,23 @@ ai-architecture/
 
 ---
 
+## Tutorial
+
+New to ARIA? The tutorial walks you through building a complete URL shortener service, covering every layer (L0–L5) from scratch.
+
+| # | Chapter | Description |
+|---|---------|-------------|
+| 0 | [Introduction](tutorial/00-introduction.md) | Orientation, structure, and prerequisites |
+| 1 | [Core Concepts](tutorial/01-concepts.md) | Layers, ARUs, naming, manifests, and composition patterns |
+| 2 | [Setup](tutorial/02-setup.md) | Environment setup and project scaffold |
+| 3 | [Project Starter](tutorial/03-project-starter.md) | URL Shortener core (L0–L3) |
+| 4 | [Project Advanced](tutorial/04-project-advanced.md) | Analytics and orchestration (L4) |
+| 5 | [AI Collaboration](tutorial/05-project-ai-collab.md) | L5 boundaries and human-AI collaboration |
+| 6 | [Running](tutorial/06-running.md) | Running the application |
+| 7 | [Conclusion](tutorial/07-conclusion.md) | Further reading and next steps |
+
+---
+
 ## Quick Start
 
 ### 1. Install the CLI

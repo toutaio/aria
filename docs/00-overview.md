@@ -81,6 +81,12 @@ ARIA synthesizes ideas from several established fields. These are not reinventio
 
 ---
 
+## Tutorial
+
+New to ARIA? The hands-on tutorial builds a complete URL shortener service from scratch, covering every layer (L0–L5): [`tutorial/00-introduction.md`](../tutorial/00-introduction.md)
+
+---
+
 ## Documents in this Theory
 
 | File | Contents |

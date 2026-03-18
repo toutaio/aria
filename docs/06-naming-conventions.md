@@ -189,6 +189,24 @@ Given a semantic address, the file path is deterministic. Given a file path, the
 
 ---
 
+## Names as Dual-Purpose Addresses
+
+ARIA names serve two distinct roles simultaneously, and understanding both is important.
+
+### Role 1: Symbolic Address (deterministic, structural)
+
+The `domain.subdomain.verb.entity` format is a **structured symbolic address** that can be parsed deterministically — like a namespace. Given `auth.token.validate.signature`, the layer (L1, from `validate`), domain (`auth`), and operation class are unambiguous without reading the manifest. The file path is also deterministic from the address. This is the primary role.
+
+### Role 2: LLM Semantic Activation (probabilistic, contextual)
+
+Because LLMs learn semantic associations from pretraining, a name like `auth.token.validate.signature` also **activates related concepts** in the model's internal representations (JWT structure, cryptographic signing, expiry checks) without those concepts needing to be explicitly provided as context. The Consistency Amplification effect (see `07-consistency-amplification.md`) means this activation is more reliable the more consistently names follow the grammar — because the LLM has seen more examples of the pattern and can predict structure from names alone.
+
+This is a secondary but real benefit. It is not the mechanism that enforces correctness — the type checker and graph validator do that. But it reduces the amount of explicit context required to guide the LLM toward correct implementations.
+
+**The key distinction**: Role 1 is enforced (naming violations are build failures). Role 2 is emergent (it improves as codebase consistency improves). Do not design names for embedding-space optimization — design them for structural clarity. The embedding benefit follows automatically.
+
+---
+
 ## Naming Enforcement
 
 Naming is not a convention — it is a constraint enforced at build time:
