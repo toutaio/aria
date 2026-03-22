@@ -17,17 +17,13 @@ Observability in ARIA is a **structural concern**, not an operational afterthoug
 
 ## The Three Observability Layers
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Layer 3: DIAGNOSTIC SURFACE    ← AI diagnostic agent entry    │
-│           (what to load when something goes wrong)              │
-├─────────────────────────────────────────────────────────────────┤
-│  Layer 2: HEALTH CONTRACTS      ← what "healthy" means per ARU │
-│           (live status, SLA compliance)                         │
-├─────────────────────────────────────────────────────────────────┤
-│  Layer 1: TRACE PROPAGATION     ← correlation across ARU chain │
-│           (who called what, in what order, with what result)    │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    L3["<b>Layer 3: DIAGNOSTIC SURFACE</b><br/>AI diagnostic agent entry<br/><i>what to load when something goes wrong</i>"]
+    L2["<b>Layer 2: HEALTH CONTRACTS</b><br/>what 'healthy' means per ARU<br/><i>live status, SLA compliance</i>"]
+    L1["<b>Layer 1: TRACE PROPAGATION</b><br/>correlation across ARU chain<br/><i>who called what, in what order, with what result</i>"]
+
+    L3 --- L2 --- L1
 ```
 
 ---
@@ -59,10 +55,10 @@ The System (L4) or Domain surface (L5) that receives an external request generat
 
 The composition system injects TraceContext as a side-channel — ARUs do not declare it as part of their input/output types. It is invisible to the ARU contract but present in the execution frame.
 
-```
-[Auth.token.validate] ──PIPE──▶ [Auth.session.create] ──PIPE──▶ [User.profile.load]
-     TraceContext propagates silently through all three
-     Each adds its own SpanId with parent reference
+```mermaid
+flowchart LR
+    A["Auth.token.validate"] -->|PIPE| B["Auth.session.create"] -->|PIPE| C["User.profile.load"]
+    T["TraceContext propagates silently through all three.\nEach adds its own SpanId with parent reference."]
 ```
 
 **Rule 3: FORK propagates the same CorrelationId to all branches.**
@@ -150,14 +146,14 @@ health_contract:
 
 Each runtime ARU is in one of four health states at any moment:
 
-```
-HEALTHY ──(error_rate rises)──▶ DEGRADED ──(threshold exceeded)──▶ CIRCUIT_OPEN
-   ▲                                │                                     │
-   │                                │ (error_rate recovers)               │ (after open_duration)
-   └────────────────────────────────┘                             HALF_OPEN
-                                                                        │
-                                                              (probe succeeds) ──▶ HEALTHY
-                                                              (probe fails)    ──▶ CIRCUIT_OPEN
+```mermaid
+stateDiagram-v2
+    HEALTHY --> DEGRADED : error_rate rises
+    DEGRADED --> CIRCUIT_OPEN : threshold exceeded
+    DEGRADED --> HEALTHY : error_rate recovers
+    CIRCUIT_OPEN --> HALF_OPEN : after open_duration
+    HALF_OPEN --> HEALTHY : probe succeeds
+    HALF_OPEN --> CIRCUIT_OPEN : probe fails
 ```
 
 The health state of each ARU is available via the graph index as a live overlay — the same structure as the static graph, but with current health states on each node.

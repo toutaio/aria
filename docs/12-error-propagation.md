@@ -23,14 +23,18 @@ Without a formal answer, every AI generating a composition makes a different cho
 
 ARIA adopts **railway-oriented programming** as its formal error propagation model. The metaphor is precise:
 
-```
-                    SUCCESS RAIL
-  ┌────┐   ┌────┐   ┌────┐   ┌────┐   ┌────────┐
-  │ A  │──▶│ B  │──▶│ C  │──▶│ D  │──▶│ Result │
-  └────┘   └────┘   └────┘   └────┘   └────────┘
-     │         │        │        │
-     │         │        │        │       FAILURE RAIL
-     └─────────┴────────┴────────┴──▶ [ ErrorHandler ]
+```mermaid
+flowchart LR
+    subgraph SUCCESS_RAIL["SUCCESS RAIL"]
+        A --> B --> C --> D --> Result
+    end
+    subgraph FAILURE_RAIL["FAILURE RAIL"]
+        ErrorHandler["ErrorHandler"]
+    end
+    A -. fail .-> ErrorHandler
+    B -. fail .-> ErrorHandler
+    C -. fail .-> ErrorHandler
+    D -. fail .-> ErrorHandler
 ```
 
 Every ARU in a PIPE chain has two output tracks:
@@ -139,15 +143,11 @@ It takes an error and either:
 - Produces a valid success-path value (error is handled, flow continues)
 - Produces a `FatalError` (error cannot be recovered, propagates up)
 
-```
-Example: retry on timeout
-
-A → B → C
-         │ (C times out)
-         ▼ failure rail
-    RECOVER(auth.retry.onTimeout)
-         │ (retries C, produces success value)
-         ▼ success rail (re-enters at C)
+```mermaid
+flowchart TD
+    A --> B --> C
+    C -. "C times out" .-> RECOVER["RECOVER(auth.retry.onTimeout)"]
+    RECOVER -. "retries C, produces success value" .-> C
 ```
 
 ### RECOVER placement rules
@@ -330,9 +330,17 @@ passive error delivery.
 
 ### The Compensation Sub-Protocol
 
+```mermaid
+flowchart LR
+    subgraph Forward["Forward execution"]
+        A --> B --> C
+    end
+    subgraph Compensate["Compensation (on failure)"]
+        Cinv["C⁻¹"] --> Binv["B⁻¹"] --> Ainv["A⁻¹"]
+    end
+    C -. "C fails" .-> Cinv
+    Ainv -. "all compensations complete" .-> CR["CompensationResult → SAGA error handler"]
 ```
-Forward execution:
-  [A] ──▶ [B] ──▶ [C]
 
 On failure at step X (e.g., C fails):
   1. C's failure goes to SAGA's internal failure rail (not the chain's error handler)
@@ -484,12 +492,12 @@ distinct error variant. Treating it as a generic failure is a build warning (it 
 
 When a composition is nested inside another (a PIPE chain inside an ORGANISM inside a SYSTEM), failure rails compose:
 
-```
-System Pipeline:
-  [OrganismA] ──PIPE──▶ [OrganismB] ──PIPE──▶ [OrganismC]
-       │                     │                     │
-  error_handler:          error_handler:        error_handler:
-  organism_A.handler      organism_B.handler    system_level.handler
+```mermaid
+flowchart LR
+    OA["OrganismA"] -->|PIPE| OB["OrganismB"] -->|PIPE| OC["OrganismC"]
+    OA -. error .-> HA["organism_A.handler"]
+    OB -. error .-> HB["organism_B.handler"]
+    OC -. error .-> HS["system_level.handler"]
 ```
 
 Each layer handles the errors it can recover from locally. Errors that cannot be recovered are **escalated** up the railway to the next layer's handler.

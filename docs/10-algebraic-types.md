@@ -101,12 +101,12 @@ VALID:    profilePicture: UserProfilePictureUrl | NotProvided
 
 Every ARU signature is expressible in a single grammar:
 
-```
-ARU_Contract ::= ProductType → SumType
-                 │             │
-                 │             └── Success_Type | Error_Type_1 | Error_Type_2 | ...
-                 │
-                 └── { field_1: StateType, field_2: StateType, ... }
+```mermaid
+flowchart LR
+    Contract["ARU_Contract"] --> ProductType
+    Contract --> SumType
+    ProductType --- Fields["{ field_1: StateType, field_2: StateType, ... }"]
+    SumType --- Variants["Success_Type | Error_Type_1 | Error_Type_2 | ..."]
 ```
 
 Examples:

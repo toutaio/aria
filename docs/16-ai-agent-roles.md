@@ -9,16 +9,15 @@ ARIA does not assume a single general-purpose AI that does everything. Different
 
 ARIA defines **five specialized agent roles**. Each role is itself an ARU at the meta-level — it has a typed input, a typed output, a declared layer of operation, and a defined context loading protocol.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    AGENT ROLE ECOSYSTEM                         │
-├─────────────┬──────────────┬─────────────┬──────────┬──────────┤
-│  NAVIGATOR  │  GENERATOR   │  REVIEWER   │REFACTORER│ORCHESTRAT│
-│             │              │             │          │   OR     │
-│ Reads graph │ Creates ARUs │ Validates   │ Rewires  │ Plans &  │
-│ Finds paths │ from subtask │ contracts   │ graph    │ assigns  │
-│ Maps context│ specs        │ & tests     │ safely   │ work     │
-└─────────────┴──────────────┴─────────────┴──────────┴──────────┘
+```mermaid
+flowchart LR
+    NAV["🧭 NAVIGATOR\nReads graph\nFinds paths\nMaps context"]
+    GEN["⚙️ GENERATOR\nCreates ARUs\nfrom subtask\nspecs"]
+    REV["✅ REVIEWER\nValidates\ncontracts\n& tests"]
+    REF["🔧 REFACTORER\nRewires\ngraph\nsafely"]
+    ORC["📋 ORCHESTRATOR\nPlans &\nassigns\nwork"]
+
+    NAV ~~~ GEN ~~~ REV ~~~ REF ~~~ ORC
 ```
 
 ---
@@ -264,26 +263,23 @@ Step 11: As each ARU reaches CANDIDATE state (streaming, not batch):
 
 ### Agent Interaction Map
 
-```
-                         ┌──────────────┐
-                         │ ORCHESTRATOR │
-                         └──────┬───────┘
-               ┌────────────────┼────────────────┐
-               ▼                ▼                 ▼
-        ┌──────────┐    ┌──────────────┐   ┌──────────┐
-        │NAVIGATOR │    │  GENERATOR   │──▶│ REVIEWER │
-        └──────────┘    └──────────────┘   └──┬───────┘
-               ▲                ▲             │
-               └────────────────┘   REJECTED ─┘
-                                    (loops back)
-                         ┌──────────────┐
-                         │  REFACTORER  │
-                         └──────────────┘
-                         (invoked for graph surgery)
+```mermaid
+flowchart TD
+    ORC["📋 ORCHESTRATOR"]
+    NAV["🧭 NAVIGATOR"]
+    GEN["⚙️ GENERATOR"]
+    REV["✅ REVIEWER"]
+    REF["🔧 REFACTORER"]
+    HUM["👤 HUMAN\nL0 types, L5 wiring,\nCANDIDATE→STABLE approval"]
 
-        ┌──────┐  ← Human touchpoints (L0 types, L5 wiring, CANDIDATE→STABLE approval)
-        │HUMAN │
-        └──────┘
+    ORC --> NAV
+    ORC --> GEN
+    ORC --> REF
+    GEN --> REV
+    REV -- "REJECTED\n(loops back)" --> GEN
+    NAV -. "context" .-> GEN
+    ORC -. "invoked for\ngraph surgery" .-> REF
+    HUM -. "human touchpoints" .-> ORC
 ```
 
 ---

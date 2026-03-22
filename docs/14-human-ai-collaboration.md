@@ -21,37 +21,23 @@ Everything else — creating ARUs, composing patterns, generating implementation
 
 ## Layer Ownership Map
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    OWNERSHIP BY LAYER                       │
-├──────┬────────────────────────────────────────────────────  │
-│  L5  │ DOMAIN          │ 👤 Human-owned                     │
-│      │                 │ Humans define domain boundaries,   │
-│      │                 │ external integrations, what is     │
-│      │                 │ exposed and what is internal.      │
-├──────┼─────────────────┼────────────────────────────────────┤
-│  L4  │ SYSTEM          │ 🤝 Collaborative                   │
-│      │                 │ AI proposes orchestration;         │
-│      │                 │ human approves system topology.    │
-├──────┼─────────────────┼────────────────────────────────────┤
-│  L3  │ ORGANISM        │ 🤖 AI-primary                      │
-│      │                 │ AI generates business logic ARUs   │
-│      │                 │ from task decomposition.           │
-│      │                 │ Human reviews and approves.        │
-├──────┼─────────────────┼────────────────────────────────────┤
-│  L2  │ MOLECULE        │ 🤖 AI-primary                      │
-│      │                 │ AI generates compositions.         │
-│      │                 │ Human approves contracts only.     │
-├──────┼─────────────────┼────────────────────────────────────┤
-│  L1  │ ATOM            │ 🤖 AI-autonomous                   │
-│      │                 │ AI generates and validates fully.  │
-│      │                 │ Human rarely involved.             │
-├──────┼─────────────────┼────────────────────────────────────┤
-│  L0  │ PRIMITIVE       │ 👤 Human-owned                     │
-│      │                 │ Humans define the type registry,   │
-│      │                 │ state machines, domain vocabulary. │
-│      │                 │ This is the semantic constitution. │
-└──────┴─────────────────┴────────────────────────────────────┘
+```mermaid
+flowchart TD
+    L5["🧱 L5 DOMAIN\n👤 Human-owned\nHumans define domain boundaries,\nexternal integrations, what is\nexposed and what is internal."]
+    L4["🧱 L4 SYSTEM\n🤝 Collaborative\nAI proposes orchestration;\nhuman approves system topology."]
+    L3["🧱 L3 ORGANISM\n🤖 AI-primary\nAI generates business logic ARUs\nfrom task decomposition.\nHuman reviews and approves."]
+    L2["🧱 L2 MOLECULE\n🤖 AI-primary\nAI generates compositions.\nHuman approves contracts only."]
+    L1["🧱 L1 ATOM\n🤖 AI-autonomous\nAI generates and validates fully.\nHuman rarely involved."]
+    L0["🧱 L0 PRIMITIVE\n👤 Human-owned\nHumans define the type registry,\nstate machines, domain vocabulary.\nThis is the semantic constitution."]
+
+    L5 --> L4 --> L3 --> L2 --> L1 --> L0
+
+    style L5 fill:#4a90d9,color:#fff
+    style L4 fill:#f5a623,color:#fff
+    style L3 fill:#7ed321,color:#fff
+    style L2 fill:#7ed321,color:#fff
+    style L1 fill:#50e3c2,color:#fff
+    style L0 fill:#4a90d9,color:#fff
 ```
 
 ### Why L0 is Human-Owned
@@ -135,16 +121,29 @@ Type compatibility checking, railway error propagation, contract versioning, tas
 
 ### Cumulative Efficiency Gains
 
-```
-Level 0:  Baseline
-Level 1:  +25%   ████████░░░░░░░░░░░░
-Level 2:  +43%   ██████████████░░░░░░
-Level 3:  +72%   ███████████████████░  ← biggest jump
-Level 4:  +87%   ██████████████████████
-Level 5:  +95%   ████████████████████████
+```mermaid
+flowchart LR
+    subgraph gains["Cumulative Efficiency Gains"]
+        direction LR
+        L0["Level 0\nBaseline"]
+        L1["Level 1\n+25%"]
+        L2["Level 2\n+43%"]
+        L3["Level 3\n+72% ← biggest jump"]
+        L4["Level 4\n+87%"]
+        L5["Level 5\n+95%"]
+    end
 
-(Estimates relative to unstructured baseline; actual gains vary by codebase and task type)
+    L0 --> L1 --> L2 --> L3 --> L4 --> L5
+
+    style L0 fill:#e0e0e0,color:#333
+    style L1 fill:#b0d4f1,color:#333
+    style L2 fill:#7bb8e0,color:#333
+    style L3 fill:#f5a623,color:#fff,stroke:#e09000,stroke-width:3px
+    style L4 fill:#4a90d9,color:#fff
+    style L5 fill:#2d6db5,color:#fff
 ```
+
+*(Estimates relative to unstructured baseline; actual gains vary by codebase and task type)*
 
 ---
 

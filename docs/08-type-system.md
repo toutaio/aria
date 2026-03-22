@@ -92,19 +92,23 @@ The three mechanisms together cover different expressiveness needs without overl
 
 All types are defined at Layer 0. There is one source of truth for every type used anywhere in the system. No type is defined inline inside a higher-layer ARU.
 
-```
-L0 Type Registry
-├── primitives/          ← enhanced primitive types
-│   ├── strings/         ← NonEmptyString, TrimmedString, etc.
-│   ├── numbers/         ← PositiveInteger, Percentage, Money, etc.
-│   └── temporal/        ← Timestamp, Duration, DateOnly, etc.
-├── branded/             ← domain-branded types
-│   ├── auth/            ← TokenString, SessionId, HashedPassword, ...
-│   ├── user/            ← UserId, EmailAddress, DisplayName, ...
-│   └── billing/         ← InvoiceId, Amount, Currency, ...
-└── states/              ← type state definitions
-    ├── auth/            ← RawToken → ValidatedToken → ExpiredToken
-    └── user/            ← RawUserInput → ValidatedUser → PersistedUser
+```mermaid
+flowchart TD
+  R["L0 Type Registry"]
+  R --> P["primitives/\nenhanced primitive types"]
+  R --> B["branded/\ndomain-branded types"]
+  R --> S["states/\ntype state definitions"]
+
+  P --> PS["strings/\nNonEmptyString, TrimmedString, etc."]
+  P --> PN["numbers/\nPositiveInteger, Percentage, Money, etc."]
+  P --> PT["temporal/\nTimestamp, Duration, DateOnly, etc."]
+
+  B --> BA["auth/\nTokenString, SessionId, HashedPassword"]
+  B --> BU["user/\nUserId, EmailAddress, DisplayName"]
+  B --> BB["billing/\nInvoiceId, Amount, Currency"]
+
+  S --> SA["auth/\nRawToken → ValidatedToken → ExpiredToken"]
+  S --> SU["user/\nRawUserInput → ValidatedUser → PersistedUser"]
 ```
 
 When an AI needs to use a type, it queries the registry by semantic address. The registry is the **vocabulary** of the system — learning it once allows understanding of all ARU contracts.
@@ -186,20 +190,17 @@ If `input_type == output_type`, the ARU is doing nothing (identity function) or 
 All types in ARIA form a lattice. The lattice has two dimensions:
 
 **Dimension 1: Specificity** (vertical)
-```
-any
-  └── string
-        └── NonEmptyString
-              └── TrimmedString
-                    └── EmailAddress
-                          └── ValidatedEmail
+```mermaid
+flowchart TD
+    any --> string --> NonEmptyString --> TrimmedString --> EmailAddress --> ValidatedEmail
 ```
 
 As we go down, the type carries more guarantees. Moving down is **narrowing** (validation/transformation). Moving up is **widening** (losing information — usually a design error).
 
 **Dimension 2: State** (horizontal, within a domain entity)
-```
-RawPassword → ValidatedRawPassword → HashedPassword → StoredHashedPassword
+```mermaid
+flowchart LR
+    RawPassword --> ValidatedRawPassword --> HashedPassword --> StoredHashedPassword
 ```
 
 Horizontal movement represents lifecycle progression. The type system encodes the data's journey through the system.

@@ -27,15 +27,15 @@ The central thesis:
 
 ## The Five Pillars
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         ARIA FRAMEWORK                          │
-├─────────────┬──────────────┬────────────┬──────────┬───────────┤
-│  Abstraction │   Atomic     │ Composition│ Context  │ Semantic  │
-│    Layers   │Responsibility│  Patterns  │Manifests │  Graph    │
-│   (WHERE)   │   Units      │   (HOW)    │  (COST)  │  (MAP)    │
-│             │   (WHAT)     │            │          │           │
-└─────────────┴──────────────┴────────────┴──────────┴───────────┘
+```mermaid
+block-beta
+  columns 5
+  HEADER["ARIA FRAMEWORK"]:5
+  A["Abstraction\nLayers\n(WHERE)"]
+  B["Atomic\nResponsibility\nUnits (WHAT)"]
+  C["Composition\nPatterns\n(HOW)"]
+  D["Context\nManifests\n(COST)"]
+  E["Semantic\nGraph\n(MAP)"]
 ```
 
 1. **Abstraction Layers** — WHERE in the system each piece lives

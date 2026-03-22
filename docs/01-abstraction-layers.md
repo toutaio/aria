@@ -7,20 +7,15 @@
 
 ARIA defines six abstraction layers. Each layer has a strict import rule: **a layer may only depend on the layer immediately below it.** No skipping, no circular references.
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│  L5 │ DOMAIN          │ Bounded contexts, system boundaries  │
-├─────┼─────────────────┼──────────────────────────────────────┤
-│  L4 │ SYSTEM          │ Orchestration of organisms           │
-├─────┼─────────────────┼──────────────────────────────────────┤
-│  L3 │ ORGANISM        │ Business logic units                 │
-├─────┼─────────────────┼──────────────────────────────────────┤
-│  L2 │ MOLECULE        │ Composed atoms with a single purpose │
-├─────┼─────────────────┼──────────────────────────────────────┤
-│  L1 │ ATOM            │ Single-responsibility operations     │
-├─────┼─────────────────┼──────────────────────────────────────┤
-│  L0 │ PRIMITIVE       │ Types, constants, pure functions     │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+  L5["L5 | DOMAIN — Bounded contexts, system boundaries"]
+  L4["L4 | SYSTEM — Orchestration of organisms"]
+  L3["L3 | ORGANISM — Business logic units"]
+  L2["L2 | MOLECULE — Composed atoms with a single purpose"]
+  L1["L1 | ATOM — Single-responsibility operations"]
+  L0["L0 | PRIMITIVE — Types, constants, pure functions"]
+  L5 --- L4 --- L3 --- L2 --- L1 --- L0
 ```
 
 ---
@@ -115,12 +110,13 @@ Each layer exposes a **surface** — a set of typed contracts — to the layer a
 
 The surface area of each layer is the **only thing the layer above is allowed to know.**
 
-```
-L5 sees:  [ L4 System interfaces ]
-L4 sees:  [ L3 Organism interfaces ]
-L3 sees:  [ L2 Molecule interfaces ]
-L2 sees:  [ L1 Atom interfaces ]
-L1 sees:  [ L0 Types and constants ]
+```mermaid
+flowchart TD
+  L5["L5"] -->|sees| L4["L4 System interfaces"]
+  L4 -->|sees| L3["L3 Organism interfaces"]
+  L3 -->|sees| L2["L2 Molecule interfaces"]
+  L2 -->|sees| L1["L1 Atom interfaces"]
+  L1 -->|sees| L0["L0 Types and constants"]
 ```
 
 ---

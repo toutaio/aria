@@ -20,14 +20,22 @@ The Task Decomposition Grammar solves this by converting a natural-language goal
 
 ## The Decomposition Hierarchy
 
-```
-Task
- └── Subtask[]
-       ├── type: SubtaskType
-       ├── target: ARU_id | TypeRegistryEntry | GraphEdge
-       ├── layer: L0–L5
-       ├── depends_on: Subtask.id[]
-       └── assignable_to: AgentRole
+```mermaid
+flowchart TD
+    Task["Task"]
+    Subtask["Subtask[]"]
+    Type["type: SubtaskType"]
+    Target["target: ARU_id | TypeRegistryEntry | GraphEdge"]
+    Layer["layer: L0–L5"]
+    Deps["depends_on: Subtask.id[]"]
+    Agent["assignable_to: AgentRole"]
+
+    Task --> Subtask
+    Subtask --- Type
+    Subtask --- Target
+    Subtask --- Layer
+    Subtask --- Deps
+    Subtask --- Agent
 ```
 
 A **Task** is the high-level goal. A **Subtask** is the smallest unit of work that can be assigned to a single agent, affects a single target, and produces a verifiable output. A Subtask maps 1:1 to exactly one of the operations in the Subtask Type Taxonomy.
@@ -230,20 +238,29 @@ task:
 
 ## The Dependency Graph of the Example
 
-```
-t01 (types) ──────────────────────────────────────────────────┐
-     │                                                        │
-     ├──▶ t02 (state machine) ──────────────────────────┐    │
-     │                                                   │    │
-     └──▶ t03 (L1 validate) ──▶ t04 (L1 exchange) ──▶  │    │
-                                       │                 │    │
-                                       ▼                 ▼    ▼
-                                  t05 (L2 resolve) ──▶ t07 (L3 organism) ──▶ t09 (L5 wire)
-                                       │                 ▲
-                                       ▼                 │
-                                  t06 (L2 create) ───────┘
-                                  
-     t08 (error handler) ──── parallel to t03-t06 ──────────▶ t07
+```mermaid
+flowchart TD
+    t01["t01 (types)"]
+    t02["t02 (state machine)"]
+    t03["t03 (L1 validate)"]
+    t04["t04 (L1 exchange)"]
+    t05["t05 (L2 resolve)"]
+    t06["t06 (L2 create)"]
+    t07["t07 (L3 organism)"]
+    t08["t08 (error handler)"]
+    t09["t09 (L5 wire)"]
+
+    t01 --> t02
+    t01 --> t03
+    t01 --> t07
+    t02 --> t07
+    t03 --> t04
+    t04 --> t05
+    t05 --> t07
+    t05 --> t06
+    t06 --> t07
+    t08 -. "parallel to t03-t06" .-> t07
+    t07 --> t09
 ```
 
 **Parallelizable groups:**

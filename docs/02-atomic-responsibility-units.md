@@ -15,19 +15,12 @@ The "lego block" metaphor is precise: every ARU has the same structural skeleton
 
 ## ARU Anatomy
 
-```
-┌──────────────────────────────────────────────────────┐
-│                        ARU                           │
-│                                                      │
-│  ┌─────────┐    ┌─────────────────┐    ┌─────────┐   │
-│  │  INPUT  │───▶│  RESPONSIBILITY │───▶│ OUTPUT  │   │
-│  │ (typed) │    │   (single)      │    │ (typed) │   │
-│  └─────────┘    └─────────────────┘    └─────────┘   │
-│                         │                            │
-│                   ┌─────▼──────┐                     │
-│                   │  MANIFEST  │                     │
-│                   └────────────┘                     │
-└──────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+  subgraph ARU [" ARU "]
+    I["INPUT\n(typed)"] --> R["RESPONSIBILITY\n(single)"] --> O["OUTPUT\n(typed)"]
+    R -.-> M["MANIFEST"]
+  end
 ```
 
 ---

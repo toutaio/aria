@@ -65,33 +65,22 @@ Each domain entity has a **Type State Machine** defined in L0. This machine decl
 
 ### Example: The Password Type State Machine
 
-```
-                    ┌─────────────────────────────────────────┐
-                    │       Password Type State Machine        │
-                    └─────────────────────────────────────────┘
+```mermaid
+stateDiagram-v2
+    [*] --> RawPassword
+    RawPassword --> ValidatedRawPassword : auth.password.validate.strength (L1 Atom)
+    ValidatedRawPassword --> HashedPassword : auth.password.hash.bcrypt (L1 Atom)
+    HashedPassword --> PersistedHashedPassword : user.credentials.persist.record (L2 Molecule)
+    PersistedHashedPassword --> ExpiredCredential : auth.credentials.expire.session (L3 Organism)
+    ExpiredCredential --> [*]
 
-  [RawPassword]
-       │
-       │  auth.password.validate.strength  (L1 Atom)
-       ▼
-  [ValidatedRawPassword]
-       │
-       │  auth.password.hash.bcrypt        (L1 Atom)
-       ▼
-  [HashedPassword]
-       │
-       │  user.credentials.persist.record  (L2 Molecule)
-       ▼
-  [PersistedHashedPassword]
-       │
-       │  auth.credentials.expire.session  (L3 Organism)
-       ▼
-  [ExpiredCredential]  ←── TERMINAL
+    note right of ExpiredCredential : TERMINAL
 
-
-  INVALID STATES (never allowed):
-    RawPassword → PersistedHashedPassword  (skipped validation + hashing)
-    HashedPassword → RawPassword           (irreversible by definition)
+    note left of RawPassword
+        INVALID STATES (never allowed):
+        RawPassword → PersistedHashedPassword (skipped validation + hashing)
+        HashedPassword → RawPassword (irreversible by definition)
+    end note
 ```
 
 The state machine is **enforced by the type system**: no ARU can accept `PersistedHashedPassword` as input unless it declares `PersistedHashedPassword` in its manifest. The graph verifies that every transition is performed by a declared ARU.
@@ -100,22 +89,14 @@ The state machine is **enforced by the type system**: no ARU can accept `Persist
 
 ## Example: The User Type State Machine
 
-```
-  [RawUserInput]
-       │
-       ├──validate.schema────▶ [SchemaValidatedUser]
-       │                              │
-       │                       validate.business──▶ [BusinessValidatedUser]
-       │                                                     │
-       │                                             create.domainObject──▶ [UserDomainObject]
-       │                                                                           │
-       │                                                                    persist.record──▶ [PersistedUser]
-       │                                                                                             │
-       │                                                                           ┌────────────────┘
-       │                                                                     project.view──▶ [UserProjection]
-       │                                                                     (read model — for API responses)
-       │
-       └──sanitize────▶ [SanitizedUserInput]  (for logging — no PII)
+```mermaid
+flowchart TD
+    A["RawUserInput"] -->|validate.schema| B["SchemaValidatedUser"]
+    B -->|validate.business| C["BusinessValidatedUser"]
+    C -->|create.domainObject| D["UserDomainObject"]
+    D -->|persist.record| E["PersistedUser"]
+    E -->|project.view| F["UserProjection\n(read model — for API responses)"]
+    A -->|sanitize| G["SanitizedUserInput\n(for logging — no PII)"]
 ```
 
 An AI generating a new user-related ARU immediately knows:

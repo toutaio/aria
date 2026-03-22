@@ -24,18 +24,15 @@ The Runtime Composition Layer (RCL) is **not a service or a library in the tradi
 
 ## The Three RCL Mechanisms
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│              RUNTIME COMPOSITION LAYER                          │
-├──────────────────┬──────────────────┬───────────────────────────┤
-│  COMPOSITION     │  RAILWAY         │  TRACE                    │
-│  REGISTRY        │  EXECUTOR        │  INJECTOR                 │
-│                  │                  │                           │
-│  Stores declared │  Runs two-track  │  Injects CorrelationId    │
-│  composition     │  execution with  │  as side-channel in       │
-│  manifests and   │  short-circuit   │  every ARU call without   │
-│  wires ARUs      │  and escalation  │  modifying ARU contracts  │
-└──────────────────┴──────────────────┴───────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph RUNTIME COMPOSITION LAYER
+        CR["<b>COMPOSITION REGISTRY</b><br/>Stores declared composition<br/>manifests and wires ARUs"]
+        RE["<b>RAILWAY EXECUTOR</b><br/>Runs two-track execution<br/>with short-circuit and escalation"]
+        TI["<b>TRACE INJECTOR</b><br/>Injects CorrelationId as<br/>side-channel in every ARU call<br/>without modifying ARU contracts"]
+    end
+
+    CR ~~~ RE ~~~ TI
 ```
 
 ---
@@ -254,41 +251,17 @@ All targets implement the same semantics; syntax differs.
 
 ## Build Pipeline Integration
 
-```
-Source Code + Manifests
-        │
-        ▼
-┌───────────────┐
-│  Manifest     │ ← validates all manifests against 20-manifest-schema.md
-│  Validator    │
-└───────┬───────┘
-        │
-        ▼
-┌───────────────┐
-│  Type         │ ← checks type compatibility for all graph edges
-│  Checker      │    (uses 11-type-compatibility.md rules)
-└───────┬───────┘
-        │
-        ▼
-┌───────────────┐
-│  Composition  │ ← generates wrapper code for all declared compositions
-│  Generator    │
-└───────┬───────┘
-        │
-        ▼
-┌───────────────┐
-│  Naming       │ ← validates verb vocabulary, address uniqueness (doc 06)
-│  Validator    │
-└───────┬───────┘
-        │
-        ▼
-┌───────────────────┐
-│  Registry         │ ← builds CompositionRegistry + manifest bundle
-│  Builder          │
-└───────┬───────────┘
-        │
-        ▼
-      Compiled + validated ARIA codebase
+```mermaid
+flowchart TD
+    SRC["Source Code + Manifests"]
+    MV["<b>Manifest Validator</b><br/>validates all manifests against<br/>20-manifest-schema.md"]
+    TC["<b>Type Checker</b><br/>checks type compatibility for all<br/>graph edges (11-type-compatibility.md rules)"]
+    CG["<b>Composition Generator</b><br/>generates wrapper code for all<br/>declared compositions"]
+    NV["<b>Naming Validator</b><br/>validates verb vocabulary,<br/>address uniqueness (doc 06)"]
+    RB["<b>Registry Builder</b><br/>builds CompositionRegistry +<br/>manifest bundle"]
+    OUT["Compiled + validated ARIA codebase"]
+
+    SRC --> MV --> TC --> CG --> NV --> RB --> OUT
 ```
 
 Every step is a build failure if it finds a violation. There are no warnings — only pass or fail.

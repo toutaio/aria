@@ -103,23 +103,20 @@ FORBIDDEN at domain boundary:
 When Domain A needs something from Domain B, the dependency resolves at **L5**, not at the
 layer where the need arises:
 
-```
 Need: auth.session.execute.loginFlow (L3 in Auth domain) needs User profile data
 
-WRONG:
-  auth.session.execute.loginFlow  ──────▶  user.profile.load.byId  (direct L3→L2 cross-domain)
+**WRONG:**
+```mermaid
+flowchart LR
+    A["auth.session.execute.loginFlow"] -->|"direct L3→L2 cross-domain ❌"| B["user.profile.load.byId"]
+```
 
-RIGHT:
-  auth.session.execute.loginFlow
-         │
-         ▼
-  auth.domain.integrate.userProfile    ← L5 INTEGRATE in Auth domain
-         │
-         ▼ (crosses boundary here — both sides are L5)
-  user.domain.expose.profileQuery      ← L5 EXPOSE in User domain
-         │
-         ▼
-  user.profile.load.byId              ← L2 Molecule in User domain
+**RIGHT:**
+```mermaid
+flowchart TD
+    A["auth.session.execute.loginFlow"] --> B["auth.domain.integrate.userProfile\n(L5 INTEGRATE in Auth domain)"]
+    B -->|"crosses boundary"| C["user.domain.expose.profileQuery\n(L5 EXPOSE in User domain)"]
+    C --> D["user.profile.load.byId\n(L2 Molecule in User domain)"]
 ```
 
 The graph edge between domains always connects two L5 ARUs. Layer skipping across domain
@@ -196,14 +193,16 @@ ACL failure escalation:
 
 The domain-level graph is a DAG — just like the ARU-level graph, but at L5:
 
-```
-Allowed:
-  Domain A ──depends on──▶ Domain B   (via L5 EXPOSE/INTEGRATE)
-
-Forbidden:
-  Domain A ──depends on──▶ Domain A   (self-loop — should be subdomain, not separate domain)
-  Domain A ──depends on──▶ Domain B
-  Domain B ──depends on──▶ Domain A   (circular dependency — redraw boundaries)
+```mermaid
+flowchart LR
+    subgraph Allowed["✅ Allowed"]
+        A1["Domain A"] -->|"depends on (via L5 EXPOSE/INTEGRATE)"| B1["Domain B"]
+    end
+    subgraph Forbidden["❌ Forbidden"]
+        A2["Domain A"] -->|"self-loop"| A2
+        A3["Domain A"] -->|"depends on"| B3["Domain B"]
+        B3 -->|"depends on"| A3
+    end
 ```
 
 ### Detecting Domain Cycles
@@ -212,14 +211,15 @@ A domain cycle means the two domains should either be:
 1. **Merged** — they are too coupled to be separate domains
 2. **Decoupled via events** — replace synchronous cross-domain calls with domain events
 
-```
-BEFORE (cycle):
-  Auth ──▶ User ──▶ Auth     ← cycle
-
-AFTER (event-driven decoupling):
-  Auth ──publishes──▶ AuthEvent.UserAuthenticated
-  User ──subscribes──▶ AuthEvent.UserAuthenticated
-                      (updates user.lastLogin without calling Auth directly)
+```mermaid
+flowchart LR
+    subgraph Before["BEFORE (cycle ❌)"]
+        Auth1["Auth"] --> User1["User"] --> Auth1
+    end
+    subgraph After["AFTER (event-driven ✅)"]
+        Auth2["Auth"] -->|publishes| E["AuthEvent.UserAuthenticated"]
+        E -->|subscribes| User2["User\n(updates user.lastLogin)"]
+    end
 ```
 
 ---

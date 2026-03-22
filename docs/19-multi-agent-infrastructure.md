@@ -13,17 +13,16 @@ This document bridges theory and near-term implementation. It distinguishes what
 
 ## Infrastructure Components
 
-```
-┌────────────────────────────────────────────────────────────────┐
-│                  MULTI-AGENT INFRASTRUCTURE                    │
-├───────────────┬────────────────┬──────────────┬───────────────┤
-│  TASK QUEUE   │  SHARED GRAPH  │  AGENT STATE │  MERGE/CONFLICT│
-│               │  REGISTRY      │  ISOLATION   │  RESOLUTION   │
-│  Distributes  │  Single source │  Prevents    │  Handles       │
-│  subtasks to  │  of truth for  │  agents from │  simultaneous  │
-│  agents       │  types + graph │  corrupting  │  graph writes  │
-│               │                │  each other  │                │
-└───────────────┴────────────────┴──────────────┴───────────────┘
+```mermaid
+flowchart LR
+    subgraph MULTI-AGENT INFRASTRUCTURE
+        TQ["<b>TASK QUEUE</b><br/>Distributes subtasks<br/>to agents"]
+        SGR["<b>SHARED GRAPH<br/>REGISTRY</b><br/>Single source of truth<br/>for types + graph"]
+        ASI["<b>AGENT STATE<br/>ISOLATION</b><br/>Prevents agents from<br/>corrupting each other"]
+        MCR["<b>MERGE/CONFLICT<br/>RESOLUTION</b><br/>Handles simultaneous<br/>graph writes"]
+    end
+
+    TQ ~~~ SGR ~~~ ASI ~~~ MCR
 ```
 
 ---

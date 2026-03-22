@@ -18,9 +18,10 @@ Every connection between two ARUs must be declared as one of these patterns. Und
 ### 1. PIPE `A → B`
 Linear transformation. Output of A is the input of B.
 
-```
-[A: X → Y] ──PIPE──▶ [B: Y → Z]
-Result type: X → Z
+```mermaid
+flowchart LR
+    A["A: X → Y"] -->|PIPE| B["B: Y → Z"]
+    R["Result type: X → Z"]
 ```
 - Most common pattern
 - Chain length is unlimited but each link must be type-compatible
@@ -31,10 +32,10 @@ Result type: X → Z
 ### 2. FORK `A → [B, C, ...]`
 Fan-out. Output of A is passed to multiple ARUs independently.
 
-```
-              ┌──▶ [B: Y → Z1]
-[A: X → Y] ──┤
-              └──▶ [C: Y → Z2]
+```mermaid
+flowchart LR
+    A["A: X → Y"] --> B["B: Y → Z1"]
+    A --> C["C: Y → Z2"]
 ```
 - B and C receive the same value; neither knows about the other
 - Results are independent (no shared state)
@@ -45,10 +46,11 @@ Fan-out. Output of A is passed to multiple ARUs independently.
 ### 3. JOIN `[A, B, ...] → C`
 Fan-in. Multiple ARU outputs are combined into one input.
 
-```
-[A: X1 → Y1] ──┐
-               MERGE ──▶ [C: (Y1, Y2) → Z]
-[B: X2 → Y2] ──┘
+```mermaid
+flowchart LR
+    A["A: X1 → Y1"] --> MERGE
+    B["B: X2 → Y2"] --> MERGE
+    MERGE --> C["C: (Y1, Y2) → Z"]
 ```
 - C's input type must match the merged output shape
 - The merge type is declared (**tuple or struct — never union, never implicit**). A union merge would make C's logic dependent on which branch fired — that is a ROUTE, not a JOIN.
@@ -59,8 +61,10 @@ Fan-in. Multiple ARU outputs are combined into one input.
 ### 4. GATE `A → B | ∅`
 Conditional pass. Output of A flows to B only if a predicate is true; otherwise nothing.
 
-```
-[A: X → Y] ──[predicate(Y)]──▶ [B: Y → Z] | dropped
+```mermaid
+flowchart LR
+    A["A: X → Y"] -->|"predicate(Y)"| B["B: Y → Z"]
+    A -->|"¬predicate(Y)"| D["dropped"]
 ```
 - The dropped path must be explicitly handled upstream
 - Predicate is a declared L1 Atom, not inline logic
@@ -71,10 +75,10 @@ Conditional pass. Output of A flows to B only if a predicate is true; otherwise 
 ### 5. ROUTE `A → B | C`
 Conditional branch. Output of A flows to exactly one of B or C based on a predicate.
 
-```
-                  ┌──[true]──▶ [B: Y → Z1]
-[A: X → Y] ──────┤
-                  └──[false]─▶ [C: Y → Z2]
+```mermaid
+flowchart LR
+    A["A: X → Y"] -->|true| B["B: Y → Z1"]
+    A -->|false| C["C: Y → Z2"]
 ```
 - Unlike GATE, all paths must be handled (no drops)
 - The routing predicate is a declared Atom
@@ -85,9 +89,10 @@ Conditional branch. Output of A flows to exactly one of B or C based on a predic
 ### 6. LOOP `A →[condition]→ A`
 Bounded iteration. Output of A feeds back into A until a condition is met.
 
-```
-[A: X → X] ──[while condition(X)]──▶ (loop)
-                                 ──▶ [done: X → Y]
+```mermaid
+flowchart LR
+    A["A: X → X"] -->|"while condition(X)"| A
+    A -->|done| Done["done: X → Y"]
 ```
 - **Must** declare a termination condition and maximum iteration bound
 - Without a bound declaration, the ARU is malformed
@@ -98,9 +103,10 @@ Bounded iteration. Output of A feeds back into A until a condition is met.
 ### 7. OBSERVE `A → (A, Event)`
 Non-mutating side channel. A processes its input normally AND emits an event, without affecting the main data flow.
 
-```
-[A: X → Y] ──────────────────────────────▶ Y (main flow)
-             └──[event: EventSchema]──▶ EventBus
+```mermaid
+flowchart LR
+    A["A: X → Y"] --> Y["Y (main flow)"]
+    A -->|"event: EventSchema"| EB["EventBus"]
 ```
 - The main output Y is unchanged by the observation
 - Events are typed schemas, never raw strings
@@ -125,8 +131,11 @@ Shape change within the same semantic domain. Input and output represent the sam
 ### 9. VALIDATE `A → A' | Error`
 Contract enforcement. A validates its input and either produces a refined output type or a typed error.
 
-```
-[A: X → X' | ValidationError]
+```mermaid
+flowchart LR
+    X["X"] --> A["A: validate"]
+    A -->|success| X2["X'"]
+    A -->|failure| E["ValidationError"]
 ```
 - On success, output is **either identical to input or a narrowed subtype** — `ValidatedEmail` from `NonEmptyString` is valid narrowing
 - Output is always `success_type | ErrorType` — never throws
@@ -139,9 +148,11 @@ Contract enforcement. A validates its input and either produces a refined output
 ### 10. CACHE `A → A` *(with memoization)*
 Transparent memoization layer. Identical inputs return stored outputs without re-executing A.
 
-```
-[cache_key(X)] ──[hit]──▶ stored_Y
-[A: X → Y]    ──[miss]──▶ Y ──▶ store(X, Y)
+```mermaid
+flowchart LR
+    CK["cache_key(X)"] -->|hit| SY["stored_Y"]
+    CK -->|miss| A["A: X → Y"]
+    A --> Y["Y"] --> Store["store(X, Y)"]
 ```
 - A's interface is unchanged (consumers are unaware of caching)
 - Cache invalidation strategy is declared in the CACHE ARU manifest
@@ -158,8 +169,9 @@ The 10 core patterns cover synchronous, in-process computation. Distributed and 
 ### 11. STREAM `A → B*`
 Lazy or infinite sequence processing. A produces elements one at a time; B processes each as it arrives.
 
-```
-[A: Source → Element*] ──STREAM──▶ [B: Element → Result*]
+```mermaid
+flowchart LR
+    A["A: Source → Element*"] -->|STREAM| B["B: Element → Result*"]
 ```
 - A and B are decoupled in time — B does not wait for A to finish
 - **Backpressure** must be declared: what B does when it cannot keep up with A
@@ -174,9 +186,14 @@ Lazy or infinite sequence processing. A produces elements one at a time; B proce
 ### 12. SAGA `[A → B → C] with [C⁻¹ → B⁻¹ → A⁻¹]`
 Distributed transaction with typed compensation. Each step has a corresponding compensating action that is called on failure.
 
-```
-Forward:    [A] ──▶ [B] ──▶ [C]    (on success)
-Compensate: [C⁻¹] ──▶ [B⁻¹] ──▶ [A⁻¹]  (on any failure — in reverse order)
+```mermaid
+flowchart LR
+    subgraph Forward["Forward (on success)"]
+        A["A"] --> B["B"] --> C["C"]
+    end
+    subgraph Compensate["Compensate (on failure — reverse order)"]
+        C2["C⁻¹"] --> B2["B⁻¹"] --> A2["A⁻¹"]
+    end
 ```
 - Each step ARU **must** have a declared `compensating_aru` in its manifest
 - Compensation is always called in strict reverse order
@@ -195,8 +212,14 @@ saga_participant:
 ### 13. CIRCUIT_BREAKER `A → B (with state)`
 Stateful failure detection. Unlike GATE (stateless predicate), the CIRCUIT_BREAKER accumulates failure history and opens the circuit when a threshold is exceeded.
 
-```
-State: CLOSED (normal) → OPEN (failing fast) → HALF_OPEN (probing) → CLOSED
+```mermaid
+stateDiagram-v2
+    CLOSED: CLOSED (normal)
+    OPEN: OPEN (failing fast)
+    HALF_OPEN: HALF_OPEN (probing)
+    CLOSED --> OPEN
+    OPEN --> HALF_OPEN
+    HALF_OPEN --> CLOSED
 ```
 - Wraps any ARU that calls an external system
 - Failure threshold and evaluation window declared in `behavioral_contract`
@@ -211,10 +234,14 @@ The CIRCUIT_BREAKER is the composition system's enforcement of the `circuit_brea
 ### 14. PARALLEL_JOIN `[A, B, C] → D (with timeout)`
 Fan-out with coordinated collection and timeout. Unlike JOIN (which waits indefinitely), PARALLEL_JOIN collects results within a time budget.
 
-```
-              ┌──▶ [A: X → Y1]  ──(result or timeout)──┐
-[Source] ─────┼──▶ [B: X → Y2]  ──(result or timeout)──┼──▶ [D: PartialResults → Z]
-              └──▶ [C: X → Y3]  ──(result or timeout)──┘
+```mermaid
+flowchart LR
+    Source["Source"] --> A["A: X → Y1"]
+    Source --> B["B: X → Y2"]
+    Source --> C["C: X → Y3"]
+    A -->|"result or timeout"| D["D: PartialResults → Z"]
+    B -->|"result or timeout"| D
+    C -->|"result or timeout"| D
 ```
 - `timeout` is declared in the composition (not individual ARUs)
 - `minimum_required_results` declares how many branches must succeed for D to proceed
@@ -233,10 +260,12 @@ The following 8 patterns extend the core 14 for concurrent, cached, and event-dr
 ### 15. PARALLEL_FORK `A → [B*, C*]`
 Concurrent fan-out with independent result collection. Unlike FORK (fire-and-forget broadcast), PARALLEL_FORK awaits all branches and collects each `Result<U, E>` individually.
 
-```
-              ┌──▶ [B: X → Result<Y1, E>]  ──┐
-[A: X] ───────┤                               ├──▶ Array<Result<Y, E>>
-              └──▶ [C: X → Result<Y2, E>]  ──┘
+```mermaid
+flowchart LR
+    A["A: X"] --> B["B: X → Result&lt;Y1, E&gt;"]
+    A --> C["C: X → Result&lt;Y2, E&gt;"]
+    B --> R["Array&lt;Result&lt;Y, E&gt;&gt;"]
+    C --> R
 ```
 - All branches receive the same input simultaneously
 - Each branch result is independently success or failure
@@ -249,8 +278,10 @@ Concurrent fan-out with independent result collection. Unlike FORK (fire-and-for
 ### 16. SCATTER_GATHER `A → [Worker*] → Aggregate`
 Scatter a collection of inputs to identical workers, then gather partial results into an aggregate.
 
-```
-[Input[]] ──scatter──▶ [Worker: T → U]* ──gather──▶ [Aggregate: U[] → Z]
+```mermaid
+flowchart LR
+    I["Input[]"] -->|scatter| W["Worker: T → U *"]
+    W -->|gather| Agg["Aggregate: U[] → Z"]
 ```
 - `worker_aru`: ARU applied to each element of the input array
 - `aggregate_aru`: ARU that combines all worker results
@@ -262,8 +293,9 @@ Scatter a collection of inputs to identical workers, then gather partial results
 ### 17. COMPENSATING_TRANSACTION `A → (A⁺, A⁻)`
 Declares a forward ARU paired with a typed compensation ARU. Simpler than SAGA — covers the case of a single step that must be undoable.
 
-```
-[Forward: T → U] paired with [Compensation: (T, Partial<U>) → void]
+```mermaid
+flowchart LR
+    F["Forward: T → U"] <-.->|"paired with"| C["Compensation: (T, Partial&lt;U&gt;) → void"]
 ```
 - `forward_aru`: the ARU that performs the operation
 - `compensation_aru`: the ARU that undoes it; receives the original input and any partial output
@@ -275,8 +307,9 @@ Declares a forward ARU paired with a typed compensation ARU. Simpler than SAGA �
 ### 18. STREAMING_PIPELINE `AsyncIterable<Chunk> → AsyncIterable<Result<U, E>>`
 Lazy chunk-by-chunk transformation. Unlike STREAM (which models a source→processor pair in the manifest), STREAMING_PIPELINE declares the type contract for an ARU that transforms a stream to a stream.
 
-```
-[A: AsyncIterable<Chunk> → AsyncIterable<Result<U, E>>]
+```mermaid
+flowchart LR
+    In["AsyncIterable&lt;Chunk&gt;"] --> A["A"] --> Out["AsyncIterable&lt;Result&lt;U, E&gt;&gt;"]
 ```
 - `source_aru`: the ARU that produces the input stream
 - `processor_aru`: the ARU that processes each chunk
@@ -289,9 +322,11 @@ Lazy chunk-by-chunk transformation. Unlike STREAM (which models a source→proce
 ### 19. CACHE_ASIDE `A → B (cache hit) | (miss → fetch → cache → B)`
 Read-through cache with an injected `CacheStore` adapter. The underlying ARU is unchanged; the cache layer is declared in the manifest.
 
-```
-[key(X)] ──hit──▶ cached_Y
-         ──miss──▶ [Target: X → Y] ──▶ cache.set(key, Y) ──▶ Y
+```mermaid
+flowchart LR
+    K["key(X)"] -->|hit| CY["cached_Y"]
+    K -->|miss| T["Target: X → Y"]
+    T --> CS["cache.set(key, Y)"] --> Y["Y"]
 ```
 - `target_aru`: the ARU whose output is being cached
 - `key_aru`: derives the cache key from the input
@@ -304,8 +339,9 @@ Read-through cache with an injected `CacheStore` adapter. The underlying ARU is 
 ### 20. BULKHEAD `A → B (pooled, bounded)`
 Concurrency isolation with a bounded pool and backpressure. Prevents a single misbehaving caller from saturating a shared resource.
 
-```
-[Target ARU] ── guarded by pool(capacity=N) ──▶ Result<U, E | BulkheadRejected>
+```mermaid
+flowchart LR
+    T["Target ARU"] -->|"guarded by pool(capacity=N)"| R["Result&lt;U, E | BulkheadRejected&gt;"]
 ```
 - `target_aru`: the ARU being protected by the bulkhead
 - `capacity`: maximum concurrent in-flight calls (required)
@@ -318,8 +354,9 @@ Concurrency isolation with a bounded pool and backpressure. Prevents a single mi
 ### 21. PRIORITY_QUEUE `A[priority] → B`
 Priority-envelope dispatch. Requests are stamped with a priority level and processed in priority order.
 
-```
-[A: (T, Priority) → U] where Priority = HIGH | NORMAL | LOW
+```mermaid
+flowchart LR
+    In["(T, Priority)"] -->|"Priority: HIGH | NORMAL | LOW"| A["A"] --> Out["U"]
 ```
 - `target_aru`: the ARU that processes each dequeued item
 - `priority_type`: TypeScript union type for priority levels (e.g. `'HIGH' | 'NORMAL' | 'LOW'`)
@@ -330,9 +367,14 @@ Priority-envelope dispatch. Requests are stamped with a priority level and proce
 ### 22. EVENT_SOURCING `Command → Events* → Aggregate`
 Command-driven event log with aggregate projection. The ARU handles a command, emits domain events, and a separate projection function folds events into aggregate state.
 
-```
-[CommandHandler: (Command, Aggregate) → Result<Event[], Error>]
-[Projection: (Aggregate, Event) → Aggregate]
+```mermaid
+flowchart LR
+    subgraph CommandHandler
+        CA["(Command, Aggregate)"] --> RE["Result&lt;Event[], Error&gt;"]
+    end
+    subgraph Projection
+        AE["(Aggregate, Event)"] --> Agg["Aggregate"]
+    end
 ```
 - `event_type`: TypeScript type for the domain event union
 - `aggregate_type`: TypeScript type for the aggregate state

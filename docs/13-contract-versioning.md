@@ -21,12 +21,20 @@ The versioning system must satisfy two competing requirements:
 
 Every ARU contract passes through a defined lifecycle. Transitions are explicit and one-directional (no going backward).
 
-```
-  DRAFT ──▶ CANDIDATE ──▶ STABLE ──▶ DEPRECATED ──▶ TOMBSTONED
-    │            │            │             │               │
-  (local)    (review)     (trusted)    (sunset clock    (deleted,
-  (no cache)  (short       (cache        running)       migration
-              cache)       forever)                      required)
+```mermaid
+stateDiagram-v2
+    [*] --> DRAFT
+    DRAFT --> CANDIDATE
+    CANDIDATE --> STABLE
+    STABLE --> DEPRECATED
+    DEPRECATED --> TOMBSTONED
+    TOMBSTONED --> [*]
+
+    note right of DRAFT : local, no cache
+    note right of CANDIDATE : review, short cache
+    note right of STABLE : trusted, cache forever
+    note right of DEPRECATED : sunset clock running
+    note right of TOMBSTONED : deleted, migration required
 ```
 
 ### DRAFT
@@ -100,8 +108,9 @@ A change is non-breaking if and only if:
 
 When a breaking change is unavoidable, a **Migration ARU** is created. This is a special TRANSFORM ARU that bridges the old contract to the new one:
 
-```
-Consumer (still using v1) ──▶ [MigrationARU: v1_output → v2_input] ──▶ New downstream (expecting v2)
+```mermaid
+flowchart LR
+    A["Consumer\n(still using v1)"] --> M["MigrationARU:\nv1_output → v2_input"] --> B["New downstream\n(expecting v2)"]
 ```
 
 Migration ARU naming convention:
@@ -131,11 +140,11 @@ New: auth.token.validate          (v2, now STABLE — same address, new version)
 
 The semantic address stays the same. The graph tracks both versions simultaneously during the migration window:
 
-```
-Graph during migration:
-  auth.token.validate@1.x.x  ── DEPRECATED ──▶ [consumers pinned to v1]
-  auth.token.validate@2.0.0  ── STABLE ──────▶ [consumers upgraded to v2]
-  auth.token.migrate.v1Tov2  ── STABLE ──────▶ [bridge for slow migrators]
+```mermaid
+flowchart LR
+    V1["auth.token.validate@1.x.x\n(DEPRECATED)"] --> C1["consumers pinned to v1"]
+    V2["auth.token.validate@2.0.0\n(STABLE)"] --> C2["consumers upgraded to v2"]
+    Bridge["auth.token.migrate.v1Tov2\n(STABLE)"] --> C3["bridge for slow migrators"]
 ```
 
 After `sunset_at`, `@1.x.x` is TOMBSTONED and the migration ARU is DEPRECATED.

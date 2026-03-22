@@ -7,32 +7,22 @@
 
 An ARU is not a static artifact. It passes through a defined lifecycle from conception to retirement. Each phase has a defined owner, a defined set of legal operations, and a transition gate.
 
-```
-                       CONCEPTION
-                           │
-                    ┌──────▼──────┐
-                    │  SPECIFIED  │  ← Orchestrator produces subtask spec
-                    └──────┬──────┘
-                           │ Generator creates
-                    ┌──────▼──────┐
-                    │    DRAFT    │  ← Implementation exists; not validated
-                    └──────┬──────┘
-                           │ Reviewer approves
-                    ┌──────▼──────┐
-                    │  CANDIDATE  │  ← Contract validated; short-lived cache
-                    └──────┬──────┘
-                           │ Human approves
-                    ┌──────▼──────┐
-                    │   STABLE    │  ← Trusted; manifest bundle injected; long-lived
-                    └──────┬──────┘
-                           │ Breaking change needed
-                    ┌──────▼──────┐
-                    │ DEPRECATED  │  ← Sunset clock running; migration ARU exists
-                    └──────┬──────┘
-                           │ sunset_at reached
-                    ┌──────▼──────┐
-                    │ TOMBSTONED  │  ← Deleted; address reserved; no consumers allowed
-                    └─────────────┘
+```mermaid
+stateDiagram-v2
+    [*] --> SPECIFIED : Orchestrator produces subtask spec
+    SPECIFIED --> DRAFT : Generator creates
+    DRAFT --> CANDIDATE : Reviewer approves
+    CANDIDATE --> STABLE : Human approves
+    STABLE --> DEPRECATED : Breaking change needed
+    DEPRECATED --> TOMBSTONED : sunset_at reached
+    TOMBSTONED --> [*]
+
+    SPECIFIED : Orchestrator produces subtask spec
+    DRAFT : Implementation exists; not validated
+    CANDIDATE : Contract validated; short‑lived cache
+    STABLE : Trusted; manifest bundle injected; long‑lived
+    DEPRECATED : Sunset clock running; migration ARU exists
+    TOMBSTONED : Deleted; address reserved; no consumers allowed
 ```
 
 ---

@@ -13,20 +13,44 @@ In ARIA, the entire codebase is formally a **Directed Acyclic Graph (DAG)**:
 
 This is not a metaphor — the graph is a first-class artifact, generated from the manifest declarations and used by AI as the primary navigation tool.
 
-```
-L5  [AuthDomain] ─────────────────────────────────────────────────
-         │ EXPOSE
-L4  [UserOnboardingSystem] ──────────────────────────────────────
-         │ PIPE             │ PIPE
-L3  [RegisterUser]     [VerifyEmail] ───────────────────────────
-         │ PIPE              │ PIPE
-L2  [CreateVerifiedUser]  [SendVerification] ──────────────────
-      │    │                  │
-     PIPE  PIPE              PIPE
-      │    │                  │
-L1 [Hash] [Validate]     [BuildEmail] ───────────────────────
-      │       │                │
-L0 [Hash_T] [Email_T]   [Template_T] ──────────────────────
+```mermaid
+flowchart TD
+  subgraph L5["L5 Domain"]
+    AuthDomain["AuthDomain"]
+  end
+  subgraph L4["L4 System"]
+    UserOnboardingSystem["UserOnboardingSystem"]
+  end
+  subgraph L3["L3 Organism"]
+    RegisterUser["RegisterUser"]
+    VerifyEmail["VerifyEmail"]
+  end
+  subgraph L2["L2 Molecule"]
+    CreateVerifiedUser["CreateVerifiedUser"]
+    SendVerification["SendVerification"]
+  end
+  subgraph L1["L1 Atom"]
+    Hash["Hash"]
+    Validate["Validate"]
+    BuildEmail["BuildEmail"]
+  end
+  subgraph L0["L0 Primitive"]
+    Hash_T["Hash_T"]
+    Email_T["Email_T"]
+    Template_T["Template_T"]
+  end
+
+  AuthDomain -->|EXPOSE| UserOnboardingSystem
+  UserOnboardingSystem -->|PIPE| RegisterUser
+  UserOnboardingSystem -->|PIPE| VerifyEmail
+  RegisterUser -->|PIPE| CreateVerifiedUser
+  VerifyEmail -->|PIPE| SendVerification
+  CreateVerifiedUser -->|PIPE| Hash
+  CreateVerifiedUser -->|PIPE| Validate
+  SendVerification -->|PIPE| BuildEmail
+  Hash --> Hash_T
+  Validate --> Email_T
+  BuildEmail --> Template_T
 ```
 
 ---
